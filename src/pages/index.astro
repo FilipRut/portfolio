@@ -16,13 +16,17 @@ import '../styles/global.css';
 	</head>
 	<body class="m-0 p-0 font-['Inter_Tight',sans-serif] bg-black">
 
-		<!-- ═══ SCROLL OVERLAP: Hero (sticky) + Prompter (slides over) ═══ -->
-		<div class="scroll-overlap-container">
-
-			<!-- HERO (sticky) -->
+		<!-- ═══ SCROLL WRAPPER: Hero stays frozen while prompter animates ═══ -->
+		<div id="scroll-wrapper" class="scroll-wrapper">
 			<section id="hero" class="hero-sticky" style="background-color: #E53E3E;">
 				<!-- Gradient overlay -->
 				<div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 50% 0%, rgba(220,50,50,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(100,0,0,0.3) 0%, transparent 50%);"></div>
+
+				<!-- Frosted ribbed glass effect -->
+				<div id="hero-glass" class="hero-glass">
+					<div class="hero-glass-gradient"></div>
+					<div class="hero-glass-frost"></div>
+				</div>
 
 				<!-- 5 vertical lines -->
 				<div class="absolute inset-0 px-6 md:px-16 flex justify-between pointer-events-none">
@@ -47,66 +51,65 @@ import '../styles/global.css';
 					<span class="hero-letter font-medium" style="color: #171717;">T</span>
 				</div>
 			</section>
+		</div>
 
-			<!-- AI PROMPTER (slides up over hero on scroll) -->
-			<section class="prompter-section">
-				<!-- SVG frosted glass filter -->
-				<svg style="position:absolute;width:0;height:0;">
-					<defs>
-						<filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
-							<feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="2" result="noise"/>
-							<feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-						</filter>
-					</defs>
-				</svg>
+		<!-- ═══ AI PROMPTER (fixed overlay, persists across entire page) ═══ -->
+		<div id="prompter-fixed" class="prompter-fixed">
+			<!-- SVG frosted glass filter -->
+			<svg style="position:absolute;width:0;height:0;">
+				<defs>
+					<filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
+						<feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="2" result="noise"/>
+						<feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+					</filter>
+				</defs>
+			</svg>
 
-				<div class="prompter-column">
-					<div class="prompter-row">
-						<!-- Dropdown toggle (hidden initially, appears on collapse) -->
-						<button id="dropdown-btn" class="prompter-dropdown" aria-label="Show suggestions">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
-								<path d="M6 9l6 6 6-6"></path>
-							</svg>
-						</button>
+			<div class="prompter-column">
+				<div class="prompter-row">
+					<!-- Dropdown toggle (hidden initially, appears on collapse) -->
+					<button id="dropdown-btn" class="prompter-dropdown" aria-label="Show suggestions">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+							<path d="M6 9l6 6 6-6"></path>
+						</svg>
+					</button>
 
-						<div class="glass-container">
-							<!-- Inner glass layer (inset/concave) -->
-							<div class="prompter-textarea-wrap">
-								<textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
+					<div class="glass-container">
+						<!-- Inner glass layer (inset/concave) -->
+						<div class="prompter-textarea-wrap">
+							<textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
 
-								<!-- Response overlay (top) -->
-								<div class="glass-overlay-top">
-									<div id="ai-response-title" class="text-white font-medium leading-none" style="font-size: clamp(2rem, 1.5rem + 2vw, 4rem);"></div>
-									<p id="ai-response-text" class="font-normal leading-relaxed" style="font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.1rem); margin-top: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem); color: rgba(255,255,255,0.7);"></p>
-								</div>
+							<!-- Response overlay (top) -->
+							<div class="glass-overlay-top">
+								<div id="ai-response-title" class="text-white font-medium leading-none" style="font-size: clamp(2rem, 1.5rem + 2vw, 4rem);"></div>
+								<p id="ai-response-text" class="font-normal leading-relaxed" style="font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.1rem); margin-top: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem); color: rgba(255,255,255,0.7);"></p>
+							</div>
 
-								<!-- Send button -->
-								<div class="glass-overlay-bottom">
-									<div class="flex-1"></div>
-									<button id="generate-btn" class="prompter-send" aria-label="Send">
-										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
-											<path d="M22 2L11 13"></path>
-											<path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-										</svg>
-									</button>
-								</div>
+							<!-- Send button -->
+							<div class="glass-overlay-bottom">
+								<div class="flex-1"></div>
+								<button id="generate-btn" class="prompter-send" aria-label="Send">
+									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+										<path d="M22 2L11 13"></path>
+										<path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+									</svg>
+								</button>
 							</div>
 						</div>
 					</div>
-
-					<!-- Suggestion bubbles (outside glass container) -->
-					<div class="prompt-bubbles">
-						<button class="prompt-bubble" data-prompt="What projects have you worked on?">What projects have you worked on?</button>
-						<button class="prompt-bubble" data-prompt="What does your design process look like?">What does your design process look like?</button>
-						<button class="prompt-bubble" data-prompt="What tools do you use?">What tools do you use?</button>
-					</div>
 				</div>
-			</section>
 
+				<!-- Suggestion bubbles (outside glass container) -->
+				<div class="prompt-bubbles">
+					<button class="prompt-bubble" data-prompt="What projects have you worked on?">What projects have you worked on?</button>
+					<button class="prompt-bubble" data-prompt="What does your design process look like?">What does your design process look like?</button>
+					<button class="prompt-bubble" data-prompt="What tools do you use?">What tools do you use?</button>
+				</div>
+			</div>
 		</div>
 
 		<!-- ═══ INTRO ═══ -->
-		<section id="intro" class="w-full bg-white" style="padding: clamp(1rem, 0.5rem + 1.5vw, 1.5rem) clamp(1.5rem, 1rem + 3vw, 4rem) clamp(2rem, 1.5rem + 2vw, 4rem);">
+		<section id="intro" class="w-full bg-white" style="min-height: 100vh; padding: clamp(1rem, 0.5rem + 1.5vw, 1.5rem) clamp(1.5rem, 1rem + 3vw, 4rem) clamp(2rem, 1.5rem + 2vw, 4rem);">
 			<div class="flex flex-col lg:flex-row items-start lg:items-center" style="padding: clamp(1rem, 0.5rem + 1vw, 1.5rem) 0; gap: clamp(1.5rem, 1rem + 2vw, 3rem);">
 				<!-- Photo + Heading group -->
 				<div class="flex items-center shrink-0" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);">
@@ -137,13 +140,13 @@ import '../styles/global.css';
 		</section>
 
 		<style>
-			/* Scroll overlap */
-			.scroll-overlap-container {
-				height: 200vh;
+			/* Scroll wrapper — tall container, hero stays sticky inside */
+			.scroll-wrapper {
 				position: relative;
+				height: 300vh; /* 100vh hero + 200vh scroll distance for prompter phases */
 			}
 
-			/* Hero sticky */
+			/* Hero sticky inside wrapper */
 			.hero-sticky {
 				position: sticky;
 				top: 0;
@@ -152,6 +155,73 @@ import '../styles/global.css';
 				display: flex;
 				flex-direction: column;
 				overflow: hidden;
+			}
+
+			/* Frosted ribbed glass effect */
+			.hero-glass {
+				position: absolute;
+				inset: 0;
+				overflow: hidden;
+				pointer-events: none;
+				z-index: 0;
+				mask-image: linear-gradient(
+					to right,
+					rgba(0,0,0,0) 3%,
+					rgba(0,0,0,1) 15%,
+					rgba(0,0,0,1) 85%,
+					rgba(0,0,0,0) 97%
+				);
+			}
+
+			.hero-glass-gradient {
+				position: absolute;
+				inset: -20%;
+				background: radial-gradient(
+					ellipse at 50% 50%,
+					rgba(210, 50, 50, 0.15) 0%,
+					transparent 70%
+				);
+				mix-blend-mode: hard-light;
+			}
+
+			.hero-glass-frost {
+				position: absolute;
+				inset: 0;
+				width: 200%;
+				transform: scale(2);
+				background-image: repeating-linear-gradient(
+					to right,
+					rgba(255, 255, 255, 0.04) 0%,
+					rgba(0, 0, 0, 0.39) 49%,
+					rgba(255, 255, 255, 0.27) 100%
+				);
+				background-size: 40px;
+				mix-blend-mode: color-dodge;
+				backdrop-filter: blur(20px);
+				-webkit-backdrop-filter: blur(20px);
+				animation: frost-drift 90s linear infinite;
+			}
+
+			@keyframes frost-drift {
+				from { transform: scale(2) translateX(0); }
+				to { transform: scale(2) translateX(-50%); }
+			}
+
+			/* Fixed prompter overlay */
+			.prompter-fixed {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				z-index: 100;
+				display: flex;
+				justify-content: center;
+				padding: 0 clamp(1.5rem, 1rem + 2vw, 3rem);
+				pointer-events: none;
+			}
+
+			.prompter-fixed > .prompter-column {
+				pointer-events: auto;
 			}
 
 			.hero-text {
@@ -169,19 +239,6 @@ import '../styles/global.css';
 				letter-spacing: 0.02em;
 				margin-bottom: -0.04em;
 				display: inline-block;
-			}
-
-			/* Prompter section (slides over hero, centered) */
-			.prompter-section {
-				position: relative;
-				z-index: 2;
-				height: 100vh;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				padding: clamp(1.5rem, 1rem + 2vw, 3rem);
-				padding-top: 16px;
-				background: transparent;
 			}
 
 			.prompter-column {
@@ -256,7 +313,7 @@ import '../styles/global.css';
 				.prompter-column { max-width: 95%; }
 			}
 
-			/* Glass container — outer layer, more transparent */
+			/* Glass container — outer layer, semi-dark for readability */
 			.glass-container {
 				position: relative;
 				width: 100%;
@@ -305,6 +362,7 @@ import '../styles/global.css';
 				color: rgba(255, 255, 255, 0.9);
 				outline: none;
 				resize: none;
+				overflow: hidden;
 				line-height: 1.6;
 				caret-color: #E53E3E;
 				scrollbar-width: none;
@@ -316,6 +374,68 @@ import '../styles/global.css';
 
 			.prompter-textarea::placeholder {
 				color: rgba(255, 255, 255, 0.5);
+			}
+
+			/* ── Light mode overrides (when over white/light bg) ── */
+			.prompter-fixed.on-light .prompter-textarea {
+				color: rgba(0, 0, 0, 0.85);
+				caret-color: #E53E3E;
+			}
+			.prompter-fixed.on-light .prompter-textarea::placeholder {
+				color: rgba(0, 0, 0, 0.4);
+			}
+			.prompter-fixed.on-light .glass-container {
+				border-color: rgba(0, 0, 0, 0.08);
+				box-shadow:
+					0 8px 32px rgba(0, 0, 0, 0.1),
+					inset 0 1px 0 rgba(255, 255, 255, 0.5);
+			}
+			.prompter-fixed.on-light .prompter-textarea-wrap {
+				border-color: rgba(0, 0, 0, 0.06);
+				box-shadow:
+					inset 0 2px 8px rgba(0, 0, 0, 0.08),
+					inset 0 1px 2px rgba(0, 0, 0, 0.06);
+			}
+			.prompter-fixed.on-light #ai-response-title {
+				color: rgba(0, 0, 0, 0.9);
+			}
+			.prompter-fixed.on-light #ai-response-text {
+				color: rgba(0, 0, 0, 0.55);
+			}
+			.prompter-fixed.on-light .prompt-bubble {
+				background: rgba(0, 0, 0, 0.06);
+				color: rgba(0, 0, 0, 0.8);
+				box-shadow:
+					0 0 0 0.75px rgba(0, 0, 0, 0.06),
+					0 4px 12px rgba(0, 0, 0, 0.06);
+			}
+			.prompter-fixed.on-light .prompt-bubble:hover {
+				background: rgba(0, 0, 0, 0.1);
+				color: rgba(0, 0, 0, 0.9);
+				box-shadow:
+					0 0 0 0.75px rgba(0, 0, 0, 0.1),
+					0 6px 16px rgba(0, 0, 0, 0.1);
+			}
+			.prompter-fixed.on-light .prompter-dropdown {
+				background: rgba(0, 0, 0, 0.06);
+				color: rgba(0, 0, 0, 0.7);
+				box-shadow:
+					0 0 0 0.75px rgba(0, 0, 0, 0.06),
+					0 4px 12px rgba(0, 0, 0, 0.06);
+			}
+			.prompter-fixed.on-light .prompter-dropdown:hover {
+				background: rgba(0, 0, 0, 0.1);
+			}
+
+			/* Smooth color transitions */
+			.prompter-textarea,
+			.glass-container,
+			.prompter-textarea-wrap,
+			.prompt-bubble,
+			.prompter-dropdown,
+			#ai-response-title,
+			#ai-response-text {
+				transition: color 0.4s ease, background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 			}
 
 			/* Response overlay — top area */
@@ -423,161 +543,146 @@ import '../styles/global.css';
 			/* ── HERO ENTRANCE ── */
 			const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-			// Top bar labels stagger in
 			heroTl.from('.hero-label', {
-				y: -20,
-				opacity: 0,
-				duration: 0.8,
-				stagger: 0.15,
+				y: -20, opacity: 0, duration: 0.8, stagger: 0.15,
 			});
 
-			// Vertical lines grow from top
 			heroTl.from('.hero-line', {
-				scaleY: 0,
-				transformOrigin: 'top center',
-				duration: 1,
-				stagger: 0.08,
-				ease: 'power2.inOut',
+				scaleY: 0, transformOrigin: 'top center',
+				duration: 1, stagger: 0.08, ease: 'power2.inOut',
 			}, '-=0.6');
 
-			// RUT letters slam up from below
 			heroTl.fromTo('.hero-letter',
 				{ y: '120%', opacity: 0 },
-				{
-					y: '0%',
-					opacity: 1,
-					duration: 1.4,
-					stagger: 0.12,
-					ease: 'power4.out',
-				},
+				{ y: '0%', opacity: 1, duration: 1.4, stagger: 0.12, ease: 'power4.out' },
 			'-=0.8');
 
-			/* ── PROMPTER (scroll-triggered) ── */
-			gsap.fromTo('.glass-container',
-				{ y: 60, opacity: 0, scale: 0.95 },
-				{
-					y: 0, opacity: 1, scale: 1,
-					duration: 1,
-					ease: 'power3.out',
-					scrollTrigger: {
-						trigger: '.prompter-section',
-						start: 'top 80%',
-						once: true,
-					},
-				}
-			);
-
-			gsap.fromTo('.prompt-bubble',
-				{ y: 20, opacity: 0, scale: 0.9 },
-				{
-					y: 0, opacity: 1, scale: 1,
-					duration: 0.6,
-					delay: 0.3,
-					stagger: 0.1,
-					ease: 'back.out(1.7)',
-					scrollTrigger: {
-						trigger: '.prompter-section',
-						start: 'top 80%',
-						once: true,
-					},
-				}
-			);
-
-			/* ── INTRO SECTION ── */
-			gsap.fromTo('.intro-el',
-				{ y: 40, opacity: 0 },
-				{
-					y: 0, opacity: 1,
-					duration: 0.8,
-					stagger: 0.15,
-					ease: 'power3.out',
-					scrollTrigger: {
-						trigger: '#intro',
-						start: 'top 80%',
-						once: true,
-					},
-				}
-			);
-
-			/* ── PROMPTER COLLAPSE ON SCROLL ── */
+			/* ── FIXED PROMPTER ── */
+			const prompterFixed = document.querySelector<HTMLElement>('#prompter-fixed')!;
 			const glassContainer = document.querySelector<HTMLElement>('.glass-container')!;
 			const textareaWrap = document.querySelector<HTMLElement>('.prompter-textarea-wrap')!;
 			const overlayTop = document.querySelector<HTMLElement>('.glass-overlay-top')!;
 			const overlayBottom = document.querySelector<HTMLElement>('.glass-overlay-bottom')!;
 			const bubblesWrap = document.querySelector<HTMLElement>('.prompt-bubbles')!;
 			const dropdownBtn = document.querySelector<HTMLButtonElement>('#dropdown-btn')!;
+			const prompterColumn = document.querySelector<HTMLElement>('.prompter-column')!;
 
-			const collapseTl = gsap.timeline({
-				defaults: { duration: 1, ease: 'power2.inOut' },
+			const vh = window.innerHeight;
+			const colH = prompterColumn.offsetHeight;
+
+			// Positions (y values for the column inside flex-start container)
+			const yOffScreen = vh + 100;                  // below viewport
+			const yCentered = (vh - colH) / 2;            // vertically centered
+			const yTop = 16;                               // 1rem from top
+
+			// Start off-screen
+			gsap.set(prompterColumn, { y: yOffScreen });
+			gsap.set('.prompt-bubble', { y: 20, opacity: 0, scale: 0.9 });
+
+			/*
+			 * scroll-wrapper is 300vh:
+			 *   scroll 0–100vh: hero visible, nothing happens
+			 *   100vh–200vh (Phase 1): prompter slides from bottom to center
+			 *   200vh–300vh (Phase 2): collapse to pill + move to top 1rem
+			 */
+
+			// Phase 1: Slide up from below to center
+			const slideTl = gsap.timeline({
 				scrollTrigger: {
-					trigger: '.prompter-section',
-					start: 'top top',
-					end: '+=500',
-					pin: true,
-					pinSpacing: true,
-					scrub: 1,
+					trigger: '#scroll-wrapper',
+					start: `${vh}px top`,
+					end: `${vh * 2}px top`,
+					scrub: true,
 				},
 			});
 
-			const prompterColumn = document.querySelector<HTMLElement>('.prompter-column')!;
-			const section = document.querySelector<HTMLElement>('.prompter-section')!;
+			slideTl
+				.to(prompterColumn, {
+					y: yCentered,
+					duration: 1,
+					ease: 'power2.out',
+				})
+				.to('.prompt-bubble', {
+					y: 0, opacity: 1, scale: 1,
+					stagger: 0.05,
+					duration: 0.4,
+					ease: 'back.out(1.7)',
+				}, 0.5);
 
-			// Move column to 1rem from top of pinned section
-			const columnOffset = prompterColumn.getBoundingClientRect().top - section.getBoundingClientRect().top;
-			const targetY = -(columnOffset - 16); // 16px = 1rem from section top
+			// Phase 2: Collapse to pill + move to top
+			const collapseTl = gsap.timeline({
+				defaults: { duration: 1, ease: 'none' },
+				scrollTrigger: {
+					trigger: '#scroll-wrapper',
+					start: `${vh * 2}px top`,
+					end: `${vh * 3}px top`,
+					scrub: true,
+				},
+			});
 
 			collapseTl
-				// Move column up to 1rem from top
-				.to(prompterColumn, { y: targetY, ease: 'none', duration: 1 }, 0)
+				// Move column from center to 1rem from top
+				.to(prompterColumn, {
+					y: yTop,
+					duration: 1,
+				}, 0)
 
-				// Glass container → pill (all props in one keyframe sequence)
-				.to(glassContainer, { ease: 'none', keyframes: [
+				// Glass container → pill
+				.to(glassContainer, { keyframes: [
 					{ minHeight: '120px', padding: '3px', borderRadius: '16px', duration: 0.6 },
-					{ minHeight: '40px', padding: '2px', borderRadius: '999px', duration: 0.4 },
+					{ minHeight: '40px', padding: '2px', borderRadius: '30px', duration: 0.4 },
 				] }, 0)
 
 				// Textarea wrap → pill
-				.to(textareaWrap, { ease: 'none', keyframes: [
+				.to(textareaWrap, { keyframes: [
 					{ minHeight: '100px', borderRadius: '12px', duration: 0.6 },
-					{ minHeight: '36px', borderRadius: '999px', duration: 0.4 },
+					{ minHeight: '36px', borderRadius: '30px', duration: 0.4 },
 				] }, 0)
 
 				// Textarea → single line
-				.to('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', paddingRight: '48px', overflow: 'hidden', height: '36px', lineHeight: '36px', ease: 'none', keyframes: [
-					{ paddingLeft: '60px', duration: 0.3 },
-					{ paddingLeft: '24px', duration: 0.7 },
-				] }, 0)
+				.to('.prompter-textarea', {
+					paddingTop: '0px', paddingBottom: '0px',
+					height: '36px', lineHeight: '36px',
+					duration: 1,
+				}, 0)
 
 				// Send button shrink
-				.to('#generate-btn', { width: '30px', height: '30px', ease: 'none', duration: 1 }, 0)
-				.to('#generate-btn svg', { width: '14px', height: '14px', ease: 'none', duration: 1 }, 0)
+				.to('#generate-btn', { width: '30px', height: '30px', duration: 1 }, 0)
+				.to('#generate-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
 
 				// Overlay top fade
-				.to(overlayTop, { opacity: 0, duration: 0.3, ease: 'none' }, 0)
+				.to(overlayTop, { opacity: 0, duration: 0.3 }, 0)
 
 				// Overlay bottom → collapsed
-				.to(overlayBottom, { ease: 'none', keyframes: [
-					{ height: '50%', padding: '8px 56px 16px 3px', duration: 0.3 },
-					{ height: '36px', padding: '3px', duration: 0.7 },
-				] }, 0)
+				.to(overlayBottom, {
+					height: '36px',
+					padding: '3px',
+					duration: 1,
+				}, 0)
 
 				// Bubbles hide
-				.to(bubblesWrap, { y: -20, opacity: 0, pointerEvents: 'none', duration: 0.4, ease: 'none' }, 0)
+				.to(bubblesWrap, { y: -20, opacity: 0, pointerEvents: 'none', duration: 0.4 }, 0)
 
 				// Dropdown shrink + appear
-				.to(dropdownBtn, { width: '36px', height: '36px', minWidth: '36px', ease: 'none', duration: 1 }, 0)
-				.to('#dropdown-btn svg', { width: '14px', height: '14px', ease: 'none', duration: 1 }, 0)
+				.to(dropdownBtn, { width: '36px', height: '36px', minWidth: '36px', duration: 1 }, 0)
+				.to('#dropdown-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
 				.to(dropdownBtn, {
-					opacity: 1,
-					pointerEvents: 'auto',
-					duration: 0.4,
-					ease: 'none',
+					opacity: 1, pointerEvents: 'auto', duration: 0.4,
 					onComplete: () => dropdownBtn.classList.add('is-visible'),
 					onReverseComplete: () => {
 						dropdownBtn.classList.remove('is-visible', 'is-open');
 						bubblesOpen = false;
 					},
 				}, 0.5);
+
+			/* ── INTRO SECTION ── */
+			gsap.fromTo('.intro-el',
+				{ y: 40, opacity: 0 },
+				{
+					y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out',
+					scrollTrigger: { trigger: '#intro', start: 'top 80%', once: true },
+				}
+			);
 
 			/* ── DROPDOWN TOGGLE ── */
 			let bubblesOpen = false;
@@ -588,19 +693,13 @@ import '../styles/global.css';
 
 				if (bubblesOpen) {
 					gsap.to(bubblesWrap, {
-						y: 0,
-						opacity: 1,
-						pointerEvents: 'auto',
-						duration: 0.4,
-						ease: 'back.out(1.7)',
+						y: 0, opacity: 1, pointerEvents: 'auto',
+						duration: 0.4, ease: 'back.out(1.7)',
 					});
 				} else {
 					gsap.to(bubblesWrap, {
-						y: -20,
-						opacity: 0,
-						pointerEvents: 'none',
-						duration: 0.3,
-						ease: 'power2.in',
+						y: -20, opacity: 0, pointerEvents: 'none',
+						duration: 0.3, ease: 'power2.in',
 					});
 				}
 			});
@@ -670,6 +769,28 @@ import '../styles/global.css';
 				generateBtn.disabled = false;
 				generateBtn.style.opacity = '1';
 			});
+
+			/* ── AUTO DETECT BACKGROUND → SWITCH COLORS ── */
+			const lightSections = document.querySelectorAll<HTMLElement>('#intro');
+
+			const checkBackground = () => {
+				const col = prompterColumn.getBoundingClientRect();
+				const colMid = col.top + col.height / 2;
+				let isLight = false;
+
+				lightSections.forEach((sec) => {
+					const rect = sec.getBoundingClientRect();
+					if (colMid >= rect.top && colMid <= rect.bottom) {
+						isLight = true;
+					}
+				});
+
+				prompterFixed.classList.toggle('on-light', isLight);
+			};
+
+			ScrollTrigger.addEventListener('refresh', checkBackground);
+			window.addEventListener('scroll', checkBackground, { passive: true });
+			checkBackground();
 		</script>
 
 	</body>
