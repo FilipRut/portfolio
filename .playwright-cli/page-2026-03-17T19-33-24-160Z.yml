@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: Filip Rut
+      - generic [ref=e8]: Lead UX/UI Designer
+      - generic [ref=e10]: 10 yrs exp
+      - generic [ref=e12]:
+        - generic [ref=e13]: Warsaw time
+        - generic [ref=e14]: —
+        - generic [ref=e15]: 20:33:24 CET
+      - link "Contact me" [ref=e17] [cursor=pointer]:
+        - /url: mailto:filiprut@example.com
+    - button "Pause background animation" [ref=e18] [cursor=pointer]:
+      - img [ref=e19]
+    - generic:
+      - generic: R
+      - generic: U
+      - generic: T
+    - generic:
+      - generic [ref=e22]:
+        - generic: "5 : 4"
+      - generic [ref=e23]:
+        - generic: "5 : 4"
+      - generic [ref=e24]:
+        - generic: "5 : 4"
+      - generic [ref=e25]:
+        - generic: "5 : 4"
+      - generic [ref=e26]:
+        - generic: "5 : 4"
+      - generic [ref=e27]:
+        - generic: "5 : 4"
+      - generic [ref=e28]:
+        - generic: "5 : 4"
+      - generic [ref=e29]:
+        - generic: "5 : 4"
+      - generic [ref=e30]:
+        - generic: "5 : 4"
+  - generic:
+    - img
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - button "Show suggestions":
+          - img
+        - generic [ref=e35]:
+          - textbox "Ask AI about me..." [ref=e36]
+          - generic:
+            - paragraph
+          - button "Send" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+      - generic [ref=e42]:
+        - button "What projects have you worked on?" [ref=e43] [cursor=pointer]
+        - button "What does your design process look like?" [ref=e44] [cursor=pointer]
+        - button "What tools do you use?" [ref=e45] [cursor=pointer]
+  - generic:
+    - generic:
+      - button "Close chat":
+        - img
+      - generic:
+        - generic:
+          - textbox "Type a message..."
+          - button "Send":
+            - img
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - img "Filip Rut" [ref=e49]
+      - heading "Leading above the corporate chaos" [level=2] [ref=e50]
+    - generic [ref=e51]:
+      - img "Design artifacts" [ref=e52]
+      - paragraph [ref=e53]: An experienced Lead UX/UI designer and Webflow developer, delivering high-quality designs and websites.
+  - generic [ref=e56]:
+    - button "Menu" [ref=e57]:
+      - img [ref=e59]
+      - generic: Menu
+    - button "Inspect" [ref=e63]:
+      - img [ref=e65]
+      - generic: Inspect
+    - button "Audit" [ref=e67]:
+      - img [ref=e69]
+      - generic: Audit
+    - button "Settings" [ref=e72]:
+      - img [ref=e74]
+      - generic: Settings

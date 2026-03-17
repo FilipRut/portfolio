@@ -1,0 +1,61 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: Filip Rut
+      - link "Contact me" [ref=e8] [cursor=pointer]:
+        - /url: mailto:filiprut@example.com
+    - button "Pause background animation" [ref=e9] [cursor=pointer]:
+      - img [ref=e10]
+    - generic:
+      - generic: R
+      - generic: U
+      - generic: T
+    - generic:
+      - generic [ref=e13]:
+        - generic: "5 : 4"
+      - generic [ref=e14]:
+        - generic: "5 : 4"
+      - generic [ref=e15]:
+        - generic: "5 : 4"
+      - generic [ref=e16]:
+        - generic: "5 : 4"
+      - generic [ref=e17]:
+        - generic: "5 : 4"
+      - generic [ref=e18]:
+        - generic: "5 : 4"
+      - generic [ref=e19]:
+        - generic: "5 : 4"
+      - generic [ref=e20]:
+        - generic: "5 : 4"
+      - generic [ref=e21]:
+        - generic: "5 : 4"
+  - generic:
+    - img
+    - generic [ref=e26]:
+      - textbox "Ask AI about me..." [ref=e27]
+      - generic:
+        - paragraph
+      - button "Send" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+  - generic [ref=e34]:
+    - generic [ref=e35]:
+      - img "Filip Rut" [ref=e36]
+      - heading "Leading above the corporate chaos" [level=2] [ref=e37]
+    - generic [ref=e38]:
+      - img "Design artifacts" [ref=e39]
+      - paragraph [ref=e40]: An experienced Lead UX/UI designer and Webflow developer, delivering high-quality designs and websites.
+  - generic [ref=e43]:
+    - button "Menu" [ref=e44]:
+      - img [ref=e46]
+      - generic: Menu
+    - button "Inspect" [ref=e50]:
+      - img [ref=e52]
+      - generic: Inspect
+    - button "Audit" [ref=e54]:
+      - generic [ref=e55]:
+        - img [ref=e56]
+        - img [ref=e59]
+      - generic: Audit
+    - button "Settings" [ref=e62]:
+      - img [ref=e64]
+      - generic: Settings

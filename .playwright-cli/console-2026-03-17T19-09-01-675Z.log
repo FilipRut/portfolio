@@ -1,0 +1,6 @@
+Total messages: 5 (Errors: 1, Warnings: 0)
+Returning 1 messages for level "error"
+
+ReferenceError: Cannot access 'promptInput' before initialization
+    at init (http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:84:5)
+    at http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:1084:3

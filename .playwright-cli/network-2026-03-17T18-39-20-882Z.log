@@ -1,0 +1,5 @@
+[GET] http://localhost:4321/node_modules/.vite/deps/gsap.js?v=b0c91e4a => [504] Outdated Optimize Dep
+[GET] http://localhost:4321/node_modules/.vite/deps/gsap_ScrollTrigger.js?v=34d6f6a0 => [504] Outdated Optimize Dep
+[GET] http://localhost:4321/node_modules/.vite/deps/gsap.js?v=b0c91e4a => [504] Outdated Optimize Dep
+[GET] http://localhost:4321/node_modules/.vite/deps/gsap_ScrollTrigger.js?v=34d6f6a0 => [504] Outdated Optimize Dep
+[GET] https://astro.build/api/v1/dev-overlay/ => [200] 

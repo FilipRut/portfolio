@@ -1,0 +1,5 @@
+[  138997ms] ReferenceError: Cannot access 'promptInput' before initialization
+    at init (http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:84:5)
+    at http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:1084:3
+[  178083ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:0
+[  178281ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts:0

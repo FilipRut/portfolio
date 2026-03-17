@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: Filip Rut
+      - generic [ref=e8]: Lead UX/UI Designer
+      - generic [ref=e10]: 10 yrs exp
+      - generic [ref=e12]:
+        - generic [ref=e13]: Warsaw time
+        - generic [ref=e14]: —
+        - generic [ref=e15]: 20:04:03 CET
+      - link "Contact me" [ref=e17] [cursor=pointer]:
+        - /url: mailto:filiprut@example.com
+    - button "Pause background animation" [ref=e18] [cursor=pointer]:
+      - img [ref=e19]
+    - generic:
+      - generic: R
+      - generic: U
+      - generic: T
+    - generic:
+      - generic [ref=e22]:
+        - generic: "5 : 4"
+      - generic [ref=e23]:
+        - generic: "5 : 4"
+      - generic [ref=e24]:
+        - generic: "5 : 4"
+      - generic [ref=e25]:
+        - generic: "5 : 4"
+      - generic [ref=e26]:
+        - generic: "5 : 4"
+      - generic [ref=e27]:
+        - generic: "5 : 4"
+      - generic [ref=e28]:
+        - generic: "5 : 4"
+      - generic [ref=e29]:
+        - generic: "5 : 4"
+      - generic [ref=e30]:
+        - generic: "5 : 4"
+  - generic:
+    - img
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - button "Show suggestions" [ref=e83] [cursor=pointer]:
+          - img [ref=e84]
+        - generic [ref=e35]:
+          - textbox "What's the hardest problem you've ever des" [ref=e92]
+          - generic:
+            - paragraph
+          - button "Send" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+      - generic:
+        - button "What projects have you worked on?"
+        - button "What does your design process look like?"
+        - button "What tools do you use?"
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - img "Filip Rut" [ref=e49]
+      - heading "Leading above the corporate chaos" [level=2] [ref=e50]
+    - generic [ref=e51]:
+      - img "Design artifacts" [ref=e52]
+      - paragraph [ref=e53]: An experienced Lead UX/UI designer and Webflow developer, delivering high-quality designs and websites.
+  - generic [ref=e56]:
+    - button "Menu" [ref=e57]:
+      - img [ref=e59]
+      - generic: Menu
+    - button "Inspect" [ref=e63]:
+      - img [ref=e65]
+      - generic: Inspect
+    - button "Audit" [ref=e67]:
+      - generic [ref=e68]:
+        - img [ref=e69]
+        - img [ref=e93]
+      - generic: Audit
+    - button "Settings" [ref=e75]:
+      - img [ref=e77]
+      - generic: Settings

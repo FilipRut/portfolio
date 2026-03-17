@@ -1,0 +1,4 @@
+{
+  "browser": "chrome",
+  "baseURL": "http://localhost:4321"
+}
