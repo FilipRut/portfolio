@@ -16,6 +16,9 @@ import '../styles/global.css';
 	</head>
 	<body class="m-0 p-0 font-['Inter_Tight',sans-serif] bg-black">
 
+		<!-- Vignette spotlight — pojawia się gdy kompozer jest na środku -->
+		<div id="scene-vignette"></div>
+
 		<!-- ═══ SCROLL WRAPPER: Hero stays frozen while prompter animates ═══ -->
 		<div id="scroll-wrapper" class="scroll-wrapper">
 			<section id="hero" class="hero-sticky" style="background-color: #E53E3E;">
@@ -28,26 +31,48 @@ import '../styles/global.css';
 					<div class="hero-glass-frost"></div>
 				</div>
 
-				<!-- 5 vertical lines -->
+				<!-- 6 vertical lines → 5 columns -->
 				<div class="absolute inset-0 px-6 md:px-16 flex justify-between pointer-events-none">
 					<div class="hero-line w-[2px] h-full" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full hidden sm:block" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
+					<div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full" style="background-color: rgba(23,23,23,0.25);"></div>
 				</div>
 
 				<!-- Top bar -->
-				<div class="relative z-10 w-full px-6 md:px-16 pt-6 md:pt-8 pb-4 flex flex-wrap gap-2 md:gap-0 justify-between items-center self-start">
-					<span class="hero-label text-stone-950 font-semibold tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Filip Rut</span>
-					<span class="hero-label text-stone-950 font-semibold tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Lead UX/UI Designer</span>
-					<span class="hero-label text-stone-950 font-semibold tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">10 yrs exp</span>
+				<div class="relative z-10 w-full px-6 md:px-16 pt-6 md:pt-8 pb-4 grid grid-cols-5 self-start" style="align-items: center;">
+					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Filip Rut</span></div>
+					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Lead UX/UI Designer</span></div>
+					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">10 yrs exp</span></div>
+					<div class="flex justify-center">
+						<span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">
+							<span style="opacity:0.55;">Warsaw time</span>
+							<span style="opacity:0.35;">—</span>
+							<span id="hero-clock"></span>
+						</span>
+					</div>
+					<div class="flex justify-center">
+						<a href="mailto:filiprut@example.com" class="hero-tag hero-contact-btn tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Contact me</a>
+					</div>
 				</div>
 
-				<!-- Big RUT text -->
-				<div class="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none select-none overflow-hidden">
+				<!-- Pause button -->
+				<button id="hero-pause-btn" class="hero-pause-btn" aria-label="Pause background animation">
+					<svg id="hero-pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<rect x="5" y="4" width="4" height="16" rx="1"/>
+						<rect x="15" y="4" width="4" height="16" rx="1"/>
+					</svg>
+					<svg id="hero-play-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+						<polygon points="6,4 20,12 6,20"/>
+					</svg>
+				</button>
+
+			<!-- Big RUT text -->
+				<div class="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none select-none" style="overflow: hidden; line-height: 0;">
 					<span class="hero-letter font-medium" style="color: #171717;">R</span>
-					<span class="hero-letter font-medium" style="color: #171717;">U</span>
+					<span class="hero-letter font-medium" style="color: #171717; position: relative; z-index: 3;">U</span>
 					<span class="hero-letter font-medium" style="color: #171717;">T</span>
 				</div>
 			</section>
@@ -74,26 +99,36 @@ import '../styles/global.css';
 						</svg>
 					</button>
 
-					<div class="glass-container">
-						<!-- Inner glass layer (inset/concave) -->
-						<div class="prompter-textarea-wrap">
-							<textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
+					<div class="glass-wrapper">
+						<div class="glass-container">
+							<!-- Inner glass layer (inset/concave) -->
+							<div class="prompter-textarea-wrap">
+								<textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
+								<div id="matrix-cursor" class="matrix-cursor"></div>
 
-							<!-- Response overlay (top) -->
-							<div class="glass-overlay-top">
-								<div id="ai-response-title" class="text-white font-medium leading-none" style="font-size: clamp(2rem, 1.5rem + 2vw, 4rem);"></div>
-								<p id="ai-response-text" class="font-normal leading-relaxed" style="font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.1rem); margin-top: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem); color: rgba(255,255,255,0.7);"></p>
+								<!-- Response overlay (top) -->
+								<div class="glass-overlay-top">
+									<div id="ai-response-title" class="text-white font-medium leading-none" style="font-size: clamp(2rem, 1.5rem + 2vw, 4rem);"></div>
+									<p id="ai-response-text" class="font-normal leading-relaxed" style="font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.1rem); margin-top: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem); color: rgba(255,255,255,0.7);"></p>
+								</div>
+
+								<!-- Send button -->
+								<div class="glass-overlay-bottom">
+									<div class="flex-1"></div>
+									<button id="generate-btn" class="prompter-send" aria-label="Send">
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+											<path d="M22 2L11 13"></path>
+											<path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+										</svg>
+									</button>
+								</div>
 							</div>
+						</div>
 
-							<!-- Send button -->
-							<div class="glass-overlay-bottom">
-								<div class="flex-1"></div>
-								<button id="generate-btn" class="prompter-send" aria-label="Send">
-									<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
-										<path d="M22 2L11 13"></path>
-										<path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-									</svg>
-								</button>
+						<!-- Pixel buddy -->
+						<div id="pixel-buddy-wrap" class="pixel-buddy-wrap">
+							<div class="pixel-buddy-inner">
+								<canvas id="pixel-buddy" width="108" height="72" style="image-rendering: pixelated; display: block;"></canvas>
 							</div>
 						</div>
 					</div>
@@ -143,7 +178,7 @@ import '../styles/global.css';
 			/* Scroll wrapper — tall container, hero stays sticky inside */
 			.scroll-wrapper {
 				position: relative;
-				height: 300vh; /* 100vh hero + 200vh scroll distance for prompter phases */
+				height: 200vh; /* slideTl: 0→vh, collapseTl: vh→2vh */
 			}
 
 			/* Hero sticky inside wrapper */
@@ -188,7 +223,6 @@ import '../styles/global.css';
 				position: absolute;
 				inset: 0;
 				width: 200%;
-				transform: scale(2);
 				background-image: repeating-linear-gradient(
 					to right,
 					rgba(255, 255, 255, 0.04) 0%,
@@ -199,12 +233,6 @@ import '../styles/global.css';
 				mix-blend-mode: color-dodge;
 				backdrop-filter: blur(20px);
 				-webkit-backdrop-filter: blur(20px);
-				animation: frost-drift 90s linear infinite;
-			}
-
-			@keyframes frost-drift {
-				from { transform: scale(2) translateX(0); }
-				to { transform: scale(2) translateX(-50%); }
 			}
 
 			/* Fixed prompter overlay */
@@ -237,8 +265,88 @@ import '../styles/global.css';
 				font-size: clamp(200px, 38vw, 650px);
 				line-height: 0.82;
 				letter-spacing: 0.02em;
-				margin-bottom: -0.04em;
 				display: inline-block;
+				vertical-align: bottom;
+				margin-bottom: -0.08em;
+			}
+
+			#scene-vignette {
+				position: fixed;
+				inset: 0;
+				pointer-events: none;
+				z-index: 4;
+				background: radial-gradient(ellipse 60% 70% at 50% 52%, transparent 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.52) 100%);
+				opacity: 0;
+				will-change: opacity;
+			}
+
+			.hero-tag {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4em;
+				padding: clamp(0.3rem, 0.25rem + 0.15vw, 0.45rem) clamp(0.7rem, 0.5rem + 0.35vw, 1rem);
+				border-radius: 6px;
+				border: 0.75px solid transparent;
+				background: rgba(255, 255, 255, 0.08);
+				color: rgba(255, 255, 255, 0.9);
+				white-space: nowrap;
+				font-weight: 400;
+				font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);
+				line-height: 1;
+				letter-spacing: 0.03em;
+				box-shadow:
+					0 0 0 0.75px rgba(255, 255, 255, 0.08),
+					0 4px 12px rgba(0, 0, 0, 0.1);
+				backdrop-filter: url(#frosted) blur(12px) saturate(120%);
+				-webkit-backdrop-filter: url(#frosted) blur(12px) saturate(120%);
+			}
+
+			.hero-pause-btn {
+				position: absolute;
+				bottom: clamp(1rem, 1.5vw, 2rem);
+				right: clamp(1.5rem, 4vw, 4rem);
+				margin-right: 1rem;
+				z-index: 10;
+				width: 48px;
+				height: 48px;
+				border-radius: 50%;
+				border: 0.75px solid transparent;
+				background: rgba(255, 255, 255, 0.08);
+				color: #fff;
+				cursor: pointer;
+				display: grid;
+				place-items: center;
+				line-height: 0;
+				transition: all 0.25s ease;
+				box-shadow:
+					0 0 0 0.75px rgba(255, 255, 255, 0.08),
+					0 8px 20px rgba(0, 0, 0, 0.12);
+				backdrop-filter: url(#frosted) blur(12px) saturate(120%);
+				-webkit-backdrop-filter: url(#frosted) blur(12px) saturate(120%);
+			}
+
+			.hero-pause-btn:hover {
+				background: rgba(255, 255, 255, 0.14);
+				transform: translateY(-1px) scale(1.08);
+				box-shadow:
+					0 0 0 0.75px rgba(255, 255, 255, 0.15),
+					0 10px 24px rgba(0, 0, 0, 0.18);
+			}
+
+			.hero-contact-btn {
+				border-radius: 999px;
+				text-decoration: none;
+				cursor: pointer;
+				align-self: center;
+				transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+			}
+
+			.hero-contact-btn:hover {
+				background: rgba(255, 255, 255, 0.14);
+				box-shadow:
+					0 0 0 0.75px rgba(255, 255, 255, 0.15),
+					0 10px 24px rgba(0, 0, 0, 0.18);
+				transform: translateY(-1px);
 			}
 
 			.prompter-column {
@@ -364,8 +472,24 @@ import '../styles/global.css';
 				resize: none;
 				overflow: hidden;
 				line-height: 1.6;
-				caret-color: #E53E3E;
+				caret-color: transparent;
 				scrollbar-width: none;
+			}
+
+			@keyframes matrix-blink {
+				0%, 49% { opacity: 1; }
+				50%, 100% { opacity: 0; }
+			}
+
+			.matrix-cursor {
+				position: absolute;
+				width: 11px;
+				background: #00ff41;
+				pointer-events: none;
+				z-index: 5;
+				display: none;
+				box-shadow: 0 0 8px #00ff41, 0 0 2px #00ff41;
+				animation: matrix-blink 0.9s step-start infinite;
 			}
 
 			.prompter-textarea::-webkit-scrollbar {
@@ -373,16 +497,26 @@ import '../styles/global.css';
 			}
 
 			.prompter-textarea::placeholder {
-				color: rgba(255, 255, 255, 0.5);
+				color: #00ff41;
+				text-shadow: 0 0 8px #00ff41, 0 0 2px #00ff41;
+				letter-spacing: 0.04em;
+				transition: color 0.15s, text-shadow 0.15s;
 			}
+
+			.prompter-textarea:focus::placeholder {
+				color: transparent;
+				text-shadow: none;
+			}
+
 
 			/* ── Light mode overrides (when over white/light bg) ── */
 			.prompter-fixed.on-light .prompter-textarea {
 				color: rgba(0, 0, 0, 0.85);
-				caret-color: #E53E3E;
+				caret-color: transparent;
 			}
 			.prompter-fixed.on-light .prompter-textarea::placeholder {
 				color: rgba(0, 0, 0, 0.4);
+				text-shadow: none;
 			}
 			.prompter-fixed.on-light .glass-container {
 				border-color: rgba(0, 0, 0, 0.08);
@@ -533,7 +667,27 @@ import '../styles/global.css';
 				transform: translateY(-1px);
 			}
 
+		/* ── PIXEL BUDDY ── */
+			.glass-wrapper {
+				position: relative;
+				width: 100%;
+			}
+
+			.pixel-buddy-wrap {
+				position: absolute;
+				bottom: 100%;
+				left: 0;
+				z-index: 1;
+				pointer-events: none;
+			}
+
+			.glass-container {
+				position: relative;
+				z-index: 2;
+			}
+
 		</style>
+
 
 		<script>
 			import gsap from 'gsap';
@@ -579,22 +733,17 @@ import '../styles/global.css';
 			gsap.set(prompterColumn, { y: yOffScreen });
 			gsap.set('.prompt-bubble', { y: 20, opacity: 0, scale: 0.9 });
 
-			/*
-			 * scroll-wrapper is 300vh:
-			 *   scroll 0–100vh: hero visible, nothing happens
-			 *   100vh–200vh (Phase 1): prompter slides from bottom to center
-			 *   200vh–300vh (Phase 2): collapse to pill + move to top 1rem
-			 */
-
 			// Phase 1: Slide up from below to center
 			const slideTl = gsap.timeline({
 				scrollTrigger: {
 					trigger: '#scroll-wrapper',
-					start: `${vh}px top`,
-					end: `${vh * 2}px top`,
+					start: `0px top`,
+					end: `${vh}px top`,
 					scrub: true,
 				},
 			});
+
+			const sceneVignette = document.getElementById('scene-vignette')!;
 
 			slideTl
 				.to(prompterColumn, {
@@ -602,6 +751,7 @@ import '../styles/global.css';
 					duration: 1,
 					ease: 'power2.out',
 				})
+				.to(sceneVignette, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.3)
 				.to('.prompt-bubble', {
 					y: 0, opacity: 1, scale: 1,
 					stagger: 0.05,
@@ -614,56 +764,33 @@ import '../styles/global.css';
 				defaults: { duration: 1, ease: 'none' },
 				scrollTrigger: {
 					trigger: '#scroll-wrapper',
-					start: `${vh * 2}px top`,
-					end: `${vh * 3}px top`,
+					start: `${vh}px top`,
+					end: `${vh * 2}px top`,
 					scrub: true,
 				},
 			});
 
 			collapseTl
-				// Move column from center to 1rem from top
-				.to(prompterColumn, {
-					y: yTop,
-					duration: 1,
-				}, 0)
-
-				// Glass container → pill
+				.to(prompterColumn, { y: yTop, duration: 1 }, 0)
+				.to(sceneVignette, { opacity: 0, duration: 0.5, ease: 'power2.in' }, 0)
 				.to(glassContainer, { keyframes: [
 					{ minHeight: '120px', padding: '3px', borderRadius: '16px', duration: 0.6 },
 					{ minHeight: '40px', padding: '2px', borderRadius: '30px', duration: 0.4 },
 				] }, 0)
-
-				// Textarea wrap → pill
 				.to(textareaWrap, { keyframes: [
 					{ minHeight: '100px', borderRadius: '12px', duration: 0.6 },
 					{ minHeight: '36px', borderRadius: '30px', duration: 0.4 },
 				] }, 0)
-
-				// Textarea → single line
 				.to('.prompter-textarea', {
 					paddingTop: '0px', paddingBottom: '0px',
 					height: '36px', lineHeight: '36px',
 					duration: 1,
 				}, 0)
-
-				// Send button shrink
 				.to('#generate-btn', { width: '30px', height: '30px', duration: 1 }, 0)
 				.to('#generate-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
-
-				// Overlay top fade
 				.to(overlayTop, { opacity: 0, duration: 0.3 }, 0)
-
-				// Overlay bottom → collapsed
-				.to(overlayBottom, {
-					height: '36px',
-					padding: '3px',
-					duration: 1,
-				}, 0)
-
-				// Bubbles hide
+				.to(overlayBottom, { height: '36px', padding: '3px', duration: 1 }, 0)
 				.to(bubblesWrap, { y: -20, opacity: 0, pointerEvents: 'none', duration: 0.4 }, 0)
-
-				// Dropdown shrink + appear
 				.to(dropdownBtn, { width: '36px', height: '36px', minWidth: '36px', duration: 1 }, 0)
 				.to('#dropdown-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
 				.to(dropdownBtn, {
@@ -708,7 +835,7 @@ import '../styles/global.css';
 			const KNOWLEDGE_BASE: Record<string, { title: string; text: string }> = {
 				'What projects have you worked on?': {
 					title: '10 years',
-					text: 'I\'ve designed e-commerce systems, SaaS applications, and corporate websites. I\'ve worked across retail, fintech, and education — from research to implementation.',
+					text: "I\'ve designed e-commerce systems, SaaS applications, and corporate websites. I\'ve worked across retail, fintech, and education — from research to implementation.",
 				},
 				'What does your design process look like?': {
 					title: 'Process',
@@ -722,7 +849,7 @@ import '../styles/global.css';
 
 			const FALLBACK = {
 				title: '404',
-				text: 'My language model hasn\'t processed that yet, but I\'d love to tell you more about it in person!',
+				text: "My language model hasn\'t processed that yet, but I\'d love to tell you more about it in person!",
 			};
 
 			const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -791,6 +918,687 @@ import '../styles/global.css';
 			ScrollTrigger.addEventListener('refresh', checkBackground);
 			window.addEventListener('scroll', checkBackground, { passive: true });
 			checkBackground();
+
+			/* ── PIXEL BUDDY ── */
+			const buddyCanvas = document.getElementById('pixel-buddy') as HTMLCanvasElement;
+			const ctx = buddyCanvas.getContext('2d')!;
+			const buddyWrap = document.getElementById('pixel-buddy-wrap')!;
+
+			const PX = 9;
+
+			// Claude Code mascot — wzór 12×8 (exact)
+			const T = null;
+			const O = '#CB6A4F';
+			const E = '#1A1A1A';
+
+			const FRAME_IDLE: (string | null)[][] = [
+				//  0   1   2   3   4   5   6   7   8   9  10  11
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 0 body
+				[T,  T,  O,  E,  O,  O,  O,  O,  E,  O,  T,  T], // 1 oczy (cols 3,8)
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 2 body
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // 3 ramiona
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // 4 ramiona
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 5 body
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T], // 6 nogi: 2,4,7,9
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T], // 7 nogi
+			];
+
+			// Arms tips (cols 0,1 left / cols 10,11 right) shifted UP 1 row — idle bob frame
+			const FRAME_IDLE_ARM_UP: (string | null)[][] = [
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  O,  E,  O,  O,  O,  O,  E,  O,  T,  T],
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // body + both tips merged
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // full arm row
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // inner arm only (tips moved up)
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T],
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T],
+			];
+
+			const FRAME_BLINK: (string | null)[][] = [
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // oczy zamknięte
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O],
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O],
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T],
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T],
+			];
+
+			// Crouch: arms drop 1px (tips rows 4-5), legs compressed to 1 row
+			const FRAME_CROUCH: (string | null)[][] = [
+				//  0   1   2   3   4   5   6   7   8   9  10  11
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 0 body
+				[T,  T,  O,  E,  O,  O,  O,  O,  E,  O,  T,  T], // 1 eyes
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 2 body
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 3 inner arm (no tips)
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // 4 full arm (tips drop to 4)
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // 5 body + tips at row 5
+				[T,  T,  T,  T,  T,  T,  T,  T,  T,  T,  T,  T], // 6 empty (legs compressed)
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T], // 7 legs (single row)
+			];
+
+			// Jump fall: arms raised 2px (tips rows 1-2)
+			const FRAME_JUMP_FALL: (string | null)[][] = [
+				//  0   1   2   3   4   5   6   7   8   9  10  11
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 0 body
+				[O,  O,  O,  E,  O,  O,  O,  O,  E,  O,  O,  O], // 1 eyes + arm tips (raised 2)
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // 2 full arm
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 3 body (tips moved up)
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 4 body
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // 5 body
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T], // 6 legs
+				[T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T], // 7 legs
+			];
+
+			function drawFrame(frame: (string | null)[][]) {
+				ctx.imageSmoothingEnabled = false;
+				ctx.clearRect(0, 0, buddyCanvas.width, buddyCanvas.height);
+				for (let row = 0; row < frame.length; row++) {
+					for (let col = 0; col < frame[row].length; col++) {
+						const color = frame[row][col];
+						if (color) {
+							ctx.fillStyle = color;
+							ctx.fillRect(col * PX, row * PX, PX, PX);
+						}
+					}
+				}
+			}
+
+			drawFrame(FRAME_IDLE);
+
+			// Blink loop
+			let blinkTimer: ReturnType<typeof setTimeout>;
+			let blinkActive = false;
+			let isBlinkingNow = false; // true tylko w trakcie zamkniętych oczu
+
+			function scheduleBlink() {
+				blinkTimer = setTimeout(() => {
+					isBlinkingNow = true;
+					drawFrame(FRAME_BLINK);
+					setTimeout(() => {
+						isBlinkingNow = false;
+						drawFrame(armBobStep === 1 ? FRAME_IDLE_ARM_UP : FRAME_IDLE);
+						scheduleBlink();
+					}, 120);
+				}, Math.random() * 2500 + 1500);
+			}
+
+			function startBlink() {
+				if (blinkActive) return;
+				blinkActive = true;
+				scheduleBlink();
+			}
+
+			function stopBlink() {
+				blinkActive = false;
+				isBlinkingNow = false;
+				clearTimeout(blinkTimer);
+				drawFrame(FRAME_IDLE);
+			}
+
+			// Arm bob (idle)
+			let armBobInterval: ReturnType<typeof setInterval> | null = null;
+			let armBobStep = 0;
+
+			function startArmBob() {
+				if (armBobInterval) return;
+				armBobStep = 0;
+				armBobInterval = setInterval(() => {
+					if (walkInterval || isBlinkingNow) return;
+					armBobStep = (armBobStep + 1) % 2;
+					drawFrame(armBobStep === 1 ? FRAME_IDLE_ARM_UP : FRAME_IDLE);
+				}, 520);
+			}
+
+			function stopArmBob() {
+				if (armBobInterval) { clearInterval(armBobInterval); armBobInterval = null; }
+				armBobStep = 0;
+			}
+
+			// GSAP jump animation
+			const glassWrap = document.querySelector<HTMLElement>('.glass-wrapper')!;
+
+			function getHideY(): number {
+				// dystans do przepchnięcia ludzika poniżej kontenera
+				return glassWrap.offsetHeight + buddyWrap.offsetHeight + 8;
+			}
+
+			// Stan początkowy: ukryty poniżej kontenera
+			gsap.set(buddyWrap, { y: () => getHideY(), opacity: 0 });
+
+			// Nogi (2 rzędy × 9px = 18px) schowane za kontenerem → efekt "stania"
+			const STAND_Y = 0;
+
+			function showBuddy() {
+				buddyWrap.classList.add('is-active');
+				startBlink();
+				startArmBob();
+				gsap.to(buddyWrap, {
+					y: STAND_Y,
+					opacity: 1,
+					duration: 0.65,
+					ease: 'elastic.out(1, 0.45)',
+					overwrite: true,
+				});
+			}
+
+			function hideBuddy() {
+				buddyWrap.classList.remove('is-active');
+				stopBlink();
+				stopArmBob();
+				if (walkInterval) { clearInterval(walkInterval); walkInterval = null; }
+				if (walkStopTimer) { clearTimeout(walkStopTimer); walkStopTimer = null; }
+				drawFrame(FRAME_IDLE);
+				lastBuddyX = 0;
+				gsap.timeline({ overwrite: true })
+					.to(buddyWrap, {
+						y: -24,
+						duration: 0.13,
+						ease: 'power2.out',
+					})
+					.to(buddyWrap, {
+						y: () => getHideY(),
+						opacity: 0,
+						duration: 0.38,
+						ease: 'power2.in',
+					});
+			}
+
+			// Walking frames
+			// WALK_L = idzie w prawo: oczy prawo, lewe końcówki rąk w górę, prawe w dół
+			const FRAME_WALK_L: (string | null)[][] = [
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  O,  O,  E,  O,  O,  O,  O,  E,  T,  T], // eyes right
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // body + left tips (cols 0,1 up)
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // inner arm + left tips
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // inner arm + right tips (cols 10,11 down)
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // body + right tips
+				[T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T,  T], // legs shifted left
+				[T,  O,  T,  O,  T,  T,  O,  T,  O,  T,  T,  T],
+			];
+
+			// WALK_R = idzie w lewo: oczy lewo, lewe końcówki w dół, prawe w górę
+			const FRAME_WALK_R: (string | null)[][] = [
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],
+				[T,  T,  E,  O,  O,  O,  O,  E,  O,  O,  T,  T], // eyes left
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // body + right tips (cols 10,11 up)
+				[T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  O,  O], // inner arm + right tips
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // inner arm + left tips (cols 0,1 down)
+				[O,  O,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T], // body + left tips
+				[T,  T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T], // legs shifted right
+				[T,  T,  T,  O,  T,  O,  T,  T,  O,  T,  O,  T],
+			];
+
+			// Walking state
+			let walkInterval: ReturnType<typeof setInterval> | null = null;
+			let walkStopTimer: ReturnType<typeof setTimeout> | null = null;
+			let walkStep = 0;
+			let walkDir = 0;
+			let lastBuddyX = 0;
+
+			function startWalking(dir: number) {
+				// Don't restart if already walking same direction — let cycle finish naturally
+				if (walkInterval && walkDir === dir) return;
+				if (walkInterval) clearInterval(walkInterval);
+				blinkActive = false;
+				isBlinkingNow = false;
+				clearTimeout(blinkTimer);
+				stopArmBob();
+				walkDir = dir;
+				const altFrame = dir > 0 ? FRAME_WALK_L : FRAME_WALK_R;
+				walkStep = 0;
+				drawFrame(altFrame); // immediately show shifted legs
+				walkInterval = setInterval(() => {
+					walkStep = (walkStep + 1) % 2;
+					drawFrame(walkStep === 0 ? FRAME_IDLE : altFrame);
+				}, 90);
+			}
+
+			function stopWalking() {
+				if (walkInterval) { clearInterval(walkInterval); walkInterval = null; }
+				if (walkStopTimer) { clearTimeout(walkStopTimer); walkStopTimer = null; }
+				walkStep = 0;
+				walkDir = 0;
+				drawFrame(FRAME_IDLE);
+				if (buddyWrap.classList.contains('is-active')) {
+					if (!blinkActive) startBlink();
+					startArmBob();
+				}
+			}
+
+			// Cursor position tracking
+			const measureCanvas = document.createElement('canvas');
+			const measureCtx = measureCanvas.getContext('2d')!;
+
+			function getCursorPct(): number {
+				const ta = promptInput;
+				if (!ta) return 0;
+				const pos = ta.selectionStart ?? 0;
+				const text = ta.value ?? '';
+				// find the text on the current line up to cursor
+				const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+				const lineText = text.slice(lineStart, pos);
+				const fullLine = text.slice(lineStart, text.indexOf('\n', pos) === -1 ? text.length : text.indexOf('\n', pos));
+				// measure using canvas with matching font
+				const style = window.getComputedStyle(ta);
+				measureCtx.font = `${style.fontSize} ${style.fontFamily}`;
+				const cursorPx = measureCtx.measureText(lineText).width;
+				const fullPx = measureCtx.measureText(fullLine || 'W').width;
+				const taWidth = ta.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+				const maxPx = Math.max(taWidth, fullPx);
+				return Math.min(cursorPx / maxPx, 1);
+			}
+
+			function getBuddyX(pct: number): number {
+				const wrapWidth = glassWrap.offsetWidth;
+				const buddyW = buddyWrap.offsetWidth;
+				return pct * (wrapWidth - buddyW);
+			}
+
+			function moveBuddy() {
+				if (!buddyWrap.classList.contains('is-active')) return;
+				if (isLaunching) return;
+				const pct = getCursorPct();
+				const targetX = getBuddyX(pct);
+				const dx = targetX - lastBuddyX;
+				if (Math.abs(dx) < 2) return;
+				const dir = dx > 0 ? 1 : -1;
+				startWalking(dir);
+				if (walkStopTimer) clearTimeout(walkStopTimer);
+				walkStopTimer = setTimeout(stopWalking, 300);
+				lastBuddyX = targetX;
+				gsap.to(buddyWrap, {
+					x: targetX,
+					duration: 0.25,
+					ease: 'power2.out',
+					overwrite: 'auto',
+				});
+			}
+
+			prompterFixed.addEventListener('focusin', (e) => {
+				if ((e.target as HTMLElement).id === 'ai-prompt') showBuddy();
+			});
+
+			let preventHide = false;
+			let isLaunching = false;
+			let isJumping = false;
+
+			prompterFixed.addEventListener('focusout', (e) => {
+				if ((e.target as HTMLElement).id !== 'ai-prompt') return;
+				if (preventHide || isLaunching) { preventHide = false; return; }
+				hideBuddy();
+			});
+
+			// Ruch poziomy
+			(['input', 'keyup', 'click', 'mouseup'] as const).forEach(evt => {
+				promptInput.addEventListener(evt, moveBuddy);
+			});
+
+			// Matrix cursor
+			const matrixCursorEl = document.getElementById('matrix-cursor') as HTMLElement;
+
+			function updateMatrixCursor() {
+				if (document.activeElement !== promptInput) {
+					matrixCursorEl.style.display = 'none';
+					return;
+				}
+				const ta = promptInput;
+				const pos = ta.selectionStart ?? 0;
+				const text = ta.value ?? '';
+				const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+				const lineText = text.slice(lineStart, pos);
+				const linesBefore = (text.slice(0, lineStart).match(/\n/g) || []).length;
+
+				const style = window.getComputedStyle(ta);
+				measureCtx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+				const xOffset = measureCtx.measureText(lineText).width;
+				const lineHeight = parseFloat(style.fontSize) * 1.6;
+				const padTop = parseFloat(style.paddingTop);
+				const padLeft = parseFloat(style.paddingLeft);
+
+				matrixCursorEl.style.height = Math.round(lineHeight * 0.85) + 'px';
+				matrixCursorEl.style.left = Math.round(padLeft + xOffset) + 'px';
+				matrixCursorEl.style.top = Math.round(padTop + linesBefore * lineHeight + lineHeight * 0.075 - ta.scrollTop) + 'px';
+				matrixCursorEl.style.display = 'block';
+			}
+
+			promptInput.addEventListener('focus', () => { matrixCursorEl.style.display = 'block'; updateMatrixCursor(); });
+			promptInput.addEventListener('blur', () => { matrixCursorEl.style.display = 'none'; });
+			(['input', 'keyup', 'keydown', 'click', 'mouseup'] as const).forEach(evt => {
+				promptInput.addEventListener(evt, updateMatrixCursor);
+			});
+
+			// Animowany placeholder — typewriter
+			const PLACEHOLDER_QUESTIONS = [
+				'How did you get into UX design?',
+				"What's your proudest project?",
+				'Do you prefer designing alone or with a team?',
+				"Have you ever shipped something you disagreed with?",
+				"What's the hardest problem you've ever designed around?",
+				'How do you handle conflicting feedback?',
+				'What does good design mean to you?',
+				'Are you open to freelance work?',
+				'What inspires your design decisions?',
+				"What's something most designers get wrong?",
+			];
+
+			let phIdx = 0;
+			let phTimer: ReturnType<typeof setTimeout>;
+			const DEFAULT_PLACEHOLDER = 'Ask AI about me...';
+
+			function typePlaceholder() {
+				if (document.activeElement === promptInput) {
+					phTimer = setTimeout(typePlaceholder, 800);
+					return;
+				}
+				const q = PLACEHOLDER_QUESTIONS[phIdx];
+				let i = 0;
+
+				function typeChar() {
+					if (document.activeElement === promptInput) {
+						promptInput.placeholder = DEFAULT_PLACEHOLDER;
+						phTimer = setTimeout(typePlaceholder, 800);
+						return;
+					}
+					promptInput.placeholder = q.slice(0, i++);
+					if (i <= q.length) {
+						phTimer = setTimeout(typeChar, 52);
+					} else {
+						phTimer = setTimeout(deleteChar, 2800);
+					}
+				}
+
+				function deleteChar() {
+					if (document.activeElement === promptInput) {
+						promptInput.placeholder = DEFAULT_PLACEHOLDER;
+						phTimer = setTimeout(typePlaceholder, 800);
+						return;
+					}
+					const cur = promptInput.placeholder;
+					if (cur.length > 0) {
+						promptInput.placeholder = cur.slice(0, -1);
+						phTimer = setTimeout(deleteChar, 28);
+					} else {
+						phIdx = (phIdx + 1) % PLACEHOLDER_QUESTIONS.length;
+						phTimer = setTimeout(typePlaceholder, 450);
+					}
+				}
+
+				typeChar();
+			}
+
+			promptInput.addEventListener('blur', () => {
+				clearTimeout(phTimer);
+				promptInput.placeholder = DEFAULT_PLACEHOLDER;
+				phTimer = setTimeout(typePlaceholder, 1200);
+			});
+
+			phTimer = setTimeout(typePlaceholder, 1800);
+
+			// Zegar Warsaw
+			const heroClock = document.getElementById('hero-clock')!;
+			function updateHeroClock() {
+				const now = new Date();
+				const time = now.toLocaleTimeString('pl-PL', {
+					timeZone: 'Europe/Warsaw',
+					hour: '2-digit', minute: '2-digit', second: '2-digit',
+					hour12: false,
+				});
+				const tz = now.toLocaleTimeString('en-GB', {
+					timeZone: 'Europe/Warsaw', timeZoneName: 'short',
+				}).split(' ').pop() ?? 'CET';
+				heroClock.textContent = `${time} ${tz}`;
+			}
+			updateHeroClock();
+			setInterval(updateHeroClock, 1000);
+
+			// Hero gallery — individual tweens per photo for seamless loop + hover pause
+			function initHeroGallery() {
+				const hero = document.getElementById('hero') as HTMLElement;
+				const heroW = hero.offsetWidth;
+				const heroH = hero.offsetHeight;
+				const padding = window.innerWidth >= 768 ? 64 : 24;
+				const innerW = heroW - 2 * padding;
+				const colGap = innerW / 5;
+
+				const minW = colGap / 2;
+				const maxW = colGap;
+				const topSafe = 88;
+				const bottomSafe = heroH * 0.75;
+
+				const N = 9;
+				const photoData: { w: number; h: number; y: number }[] = [];
+				for (let i = 0; i < N; i++) {
+					const w = minW + Math.random() * (maxW - minW);
+					const h = w * (4 / 5);
+					const yRange = bottomSafe - topSafe - h;
+					photoData.push({ w, h, y: yRange > 0 ? topSafe + Math.random() * yRange : topSafe });
+				}
+				for (let i = photoData.length - 1; i > 0; i--) {
+					const j = Math.floor(Math.random() * (i + 1));
+					[photoData[i], photoData[j]] = [photoData[j], photoData[i]];
+				}
+
+				let curX = 0;
+				const positions = photoData.map(p => { const r = { ...p, x: curX }; curX += p.w + colGap; return r; });
+				const setW = curX;
+
+				const gallery = document.createElement('div');
+				gallery.style.cssText = 'position:absolute;inset:0;overflow:hidden;z-index:2;pointer-events:none;';
+
+				const photoTls: gsap.core.Tween[] = [];
+				const photoEls: HTMLElement[] = [];
+
+				positions.forEach(p => {
+					const el = document.createElement('div');
+					el.style.cssText = `position:absolute;left:0;top:${p.y}px;width:${p.w}px;height:${p.h}px;border-radius:8px;background:rgba(255,255,255,0.09);box-shadow:0 0 0 0.75px rgba(255,255,255,0.12),0 8px 24px rgba(0,0,0,0.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:auto;cursor:default;transition:box-shadow 0.25s;`;
+					const label = document.createElement('div');
+					label.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Inter Tight,sans-serif;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:0.08em;pointer-events:none;';
+					label.textContent = '5 : 4';
+					el.appendChild(label);
+					gallery.appendChild(el);
+					photoEls.push(el);
+
+					const initX = heroW + p.x;
+					gsap.set(el, { x: initX });
+
+					// Seamless wrap via modifier: (delta % -setW) keeps x in [initX-setW, initX)
+					const tl = gsap.to(el, {
+						x: initX - setW,
+						duration: setW / 70,
+						ease: 'none',
+						repeat: -1,
+						modifiers: {
+							x: (x: string) => ((parseFloat(x) - initX) % -setW + initX) + 'px',
+						},
+					});
+
+					el.addEventListener('mouseenter', () => {
+						tl.pause();
+						gsap.to(el, { scale: 1.06, duration: 0.25, ease: 'power2.out', overwrite: 'auto' });
+						el.style.boxShadow = '0 0 0 0.75px rgba(255,255,255,0.22),0 12px 32px rgba(0,0,0,0.28)';
+					});
+					el.addEventListener('mouseleave', () => {
+						el.style.boxShadow = '0 0 0 0.75px rgba(255,255,255,0.12),0 8px 24px rgba(0,0,0,0.18)';
+						gsap.to(el, { scale: 1, duration: 0.2, ease: 'power2.in', overwrite: 'auto',
+							onComplete: () => { if (!heroPaused) tl.play(); },
+						});
+					});
+
+					photoTls.push(tl);
+				});
+
+				hero.appendChild(gallery);
+				return { photoTls, photoEls };
+			}
+
+			// Hero pause button
+			const heroPauseBtn = document.getElementById('hero-pause-btn')!;
+			const heroPauseIcon = document.getElementById('hero-pause-icon')!;
+			const heroPlayIcon = document.getElementById('hero-play-icon')!;
+			const heroFrost = document.querySelector<HTMLElement>('.hero-glass-frost')!;
+			let heroPaused = false;
+
+			const { photoTls: galleryTls, photoEls: galleryEls } = initHeroGallery();
+
+			// Frost — seamless loop via modifier (no jump at repeat)
+			gsap.set(heroFrost, { scale: 2, xPercent: 0 });
+			const frostTl = gsap.to(heroFrost, {
+				xPercent: -50,
+				duration: 90,
+				ease: 'none',
+				repeat: -1,
+				modifiers: {
+					xPercent: (x: string) => String(parseFloat(x) % -50),
+				},
+			});
+
+						// Time slows — slideTl phase (prompter slides to center): speed 1 → 0.1
+			ScrollTrigger.create({
+				trigger: '#scroll-wrapper',
+				start: '0px top',
+				end: `${vh}px top`,
+				scrub: true,
+				onUpdate(self) {
+					const speed = gsap.utils.interpolate(1, 0.1, self.progress);
+					frostTl.timeScale(speed);
+					galleryTls.forEach(tl => tl.timeScale(speed));
+				},
+			});
+
+			// Time slows — collapseTl phase (prompter collapses to top): speed 0.1 → 1
+			ScrollTrigger.create({
+				trigger: '#scroll-wrapper',
+				start: `${vh}px top`,
+				end: `${vh * 2}px top`,
+				scrub: true,
+				onUpdate(self) {
+					const speed = gsap.utils.interpolate(0.1, 1, self.progress);
+					frostTl.timeScale(speed);
+					galleryTls.forEach(tl => tl.timeScale(speed));
+				},
+			});
+
+			// Parallax on hero exit — gallery up, RUT down
+			ScrollTrigger.create({
+				trigger: '#scroll-wrapper',
+				start: `${vh}px top`,
+				end: `${vh * 2}px top`,
+				scrub: true,
+				onUpdate(self) {
+					gsap.set(galleryEls, { y: -70 * self.progress });
+					gsap.set('.hero-letter', { y: `${12 * self.progress}%` });
+				},
+			});
+
+			heroPauseBtn.addEventListener('click', () => {
+				heroPaused = !heroPaused;
+				if (heroPaused) { frostTl.pause(); galleryTls.forEach(tl => tl.pause()); }
+				else { frostTl.play(); galleryTls.forEach(tl => tl.play()); }
+				heroPauseIcon.style.display = heroPaused ? 'none' : 'block';
+				heroPlayIcon.style.display = heroPaused ? 'block' : 'none';
+			});
+
+			// Rocket launch + confetti
+			function spawnConfetti() {
+				const colors = ['#FF6B6B','#FFE66D','#4ECDC4','#A78BFA','#F472B6','#34D399','#FFA500','#60A5FA'];
+				const rect = buddyWrap.getBoundingClientRect();
+				const cx = rect.left + rect.width / 2;
+				const cy = rect.bottom;
+				for (let i = 0; i < 28; i++) {
+					const el = document.createElement('div');
+					const size = Math.random() * 7 + 4;
+					el.style.cssText = `position:fixed;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${cx}px;top:${cy}px;z-index:9999;pointer-events:none;image-rendering:pixelated;border-radius:${Math.random() > 0.5 ? '50%' : '0'};`;
+					document.body.appendChild(el);
+					// shoot downward/sideways from butt
+					const angle = (Math.random() * 140 + 20) * (Math.PI / 180); // 20°–160° (downward spread)
+					const speed = Math.random() * 220 + 80;
+					gsap.to(el, {
+						x: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
+						y: Math.sin(angle) * speed + 100,
+						rotation: Math.random() * 720 - 360,
+						opacity: 0,
+						duration: Math.random() * 0.7 + 0.5,
+						ease: 'power2.out',
+						onComplete: () => el.remove(),
+					});
+				}
+			}
+
+			function rocketBuddy() {
+				if (!buddyWrap.classList.contains('is-active')) return;
+				if (isLaunching) return;
+				isLaunching = true;
+				stopWalking();
+				stopBlink();
+				const vw = window.innerWidth;
+				const vh = window.innerHeight;
+
+				gsap.timeline({ overwrite: true })
+					// Squash — jak nakręcana sprężyna od dołu
+					.set(buddyWrap, { transformOrigin: '50% 100%' })
+					.to(buddyWrap, { scaleX: 1.55, scaleY: 0.42, duration: 0.13, ease: 'power2.out' })
+					.to(buddyWrap, { scaleX: 1.55, scaleY: 0.42, duration: 0.06 })
+					// Sprężenie w górę
+					.to(buddyWrap, { scaleX: 0.62, scaleY: 1.75, duration: 0.11, ease: 'power2.in' })
+					.call(() => spawnConfetti())
+					// Powrót do normalnej skali (szybko) — potem lot z rotacją
+					.to(buddyWrap, { scaleX: 1, scaleY: 1, duration: 0.07, ease: 'none' })
+					.to(buddyWrap, {
+						x: '+=' + (vw * 0.55),
+						y: -(vh + buddyWrap.offsetHeight + 120),
+						rotation: 55,
+						duration: 0.72,
+						ease: 'power3.in',
+					})
+					.call(() => {
+						isLaunching = false;
+						buddyWrap.classList.remove('is-active');
+						gsap.set(buddyWrap, { y: () => getHideY(), x: 0, rotation: 0, scaleX: 1, scaleY: 1, opacity: 0 });
+						lastBuddyX = 0;
+					});
+			}
+
+			function jumpBuddy() {
+				if (!buddyWrap.classList.contains('is-active')) return;
+				if (isJumping || isLaunching) return;
+				isJumping = true;
+				stopBlink();
+				stopArmBob();
+
+				drawFrame(FRAME_CROUCH);
+
+				gsap.timeline({ overwrite: 'auto' })
+					// Crouch: tiny sink
+					.to(buddyWrap, { y: STAND_Y + 3, duration: 0.08, ease: 'power2.out' })
+					// Launch: straighten legs, rise
+					.call(() => drawFrame(FRAME_IDLE))
+					.to(buddyWrap, { y: STAND_Y - 22, duration: 0.20, ease: 'power2.out' })
+					// Falling: arms shoot up
+					.call(() => drawFrame(FRAME_JUMP_FALL))
+					.to(buddyWrap, { y: STAND_Y, duration: 0.17, ease: 'power3.in' })
+					// Mini bounce on landing
+					.to(buddyWrap, { y: STAND_Y - 5, duration: 0.06, ease: 'power2.out' })
+					.to(buddyWrap, { y: STAND_Y, duration: 0.09, ease: 'power2.in' })
+					.call(() => {
+						drawFrame(FRAME_IDLE);
+						isJumping = false;
+						if (buddyWrap.classList.contains('is-active')) {
+							startBlink();
+							startArmBob();
+						}
+					});
+			}
+
+			// mousedown ustawia flagę zanim focusout zdąży odpalić hideBuddy
+			generateBtn.addEventListener('mousedown', () => { preventHide = true; });
+			generateBtn.addEventListener('click', rocketBuddy);
+			promptInput.addEventListener('keydown', (e: KeyboardEvent) => {
+				if (e.key === 'Enter' && !e.shiftKey) rocketBuddy();
+				if (e.key === ' ') jumpBuddy();
+			});
 		</script>
 
 	</body>
