@@ -14,7 +14,7 @@ import '../styles/global.css';
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
 	</head>
-	<body class="m-0 p-0 font-['Inter_Tight',sans-serif] bg-black">
+	<body class="m-0 p-0 font-['Inter_Tight',sans-serif] bg-white">
 
 		<!-- Vignette spotlight — pojawia się gdy kompozer jest na środku -->
 		<div id="scene-vignette"></div>
@@ -32,7 +32,7 @@ import '../styles/global.css';
 				</div>
 
 				<!-- 6 vertical lines → 5 columns -->
-				<div class="absolute inset-0 px-6 md:px-16 flex justify-between pointer-events-none">
+				<div class="absolute inset-0 px-4 md:px-16 flex justify-between pointer-events-none">
 					<div class="hero-line w-[2px] h-full" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
 					<div class="hero-line w-[2px] h-full hidden sm:block" style="background-color: rgba(23,23,23,0.25);"></div>
@@ -42,11 +42,11 @@ import '../styles/global.css';
 				</div>
 
 				<!-- Top bar -->
-				<div class="relative z-10 w-full px-6 md:px-16 pt-6 md:pt-8 pb-4 grid grid-cols-5 self-start" style="align-items: center;">
+				<div class="relative z-10 w-full px-4 md:px-16 pt-6 md:pt-8 pb-4 grid grid-cols-2 md:grid-cols-5 self-start" style="align-items: center;">
 					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Filip Rut</span></div>
-					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Lead UX/UI Designer</span></div>
-					<div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">10 yrs exp</span></div>
-					<div class="flex justify-center">
+					<div class="hidden md:flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Lead UX/UI Designer</span></div>
+					<div class="hidden md:flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">10 yrs exp</span></div>
+					<div class="hidden md:flex justify-center">
 						<span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">
 							<span style="opacity:0.55;">Warsaw time</span>
 							<span style="opacity:0.35;">—</span>
@@ -178,7 +178,7 @@ import '../styles/global.css';
 			/* Scroll wrapper — tall container, hero stays sticky inside */
 			.scroll-wrapper {
 				position: relative;
-				height: 200vh; /* slideTl: 0→vh, collapseTl: vh→2vh */
+				height: 200vh; /* 100vh slide + 100vh collapse */
 			}
 
 			/* Hero sticky inside wrapper */
@@ -241,11 +241,13 @@ import '../styles/global.css';
 				top: 0;
 				left: 0;
 				right: 0;
+				bottom: 0;
 				z-index: 100;
 				display: flex;
 				justify-content: center;
 				padding: 0 clamp(1.5rem, 1rem + 2vw, 3rem);
 				pointer-events: none;
+				overflow: hidden;
 			}
 
 			.prompter-fixed > .prompter-column {
@@ -254,7 +256,7 @@ import '../styles/global.css';
 
 			.hero-text {
 				font-family: 'Inter Tight', sans-serif;
-				font-size: clamp(200px, 38vw, 650px);
+				font-size: clamp(180px, min(61vh, 38vw), 1000px);
 				line-height: 0.82;
 				letter-spacing: 0.02em;
 				margin-bottom: -0.04em;
@@ -262,7 +264,7 @@ import '../styles/global.css';
 
 			.hero-letter {
 				font-family: 'Inter Tight', sans-serif;
-				font-size: clamp(200px, 38vw, 650px);
+				font-size: clamp(180px, min(61vh, 38vw), 1000px);
 				line-height: 0.82;
 				letter-spacing: 0.02em;
 				display: inline-block;
@@ -357,6 +359,7 @@ import '../styles/global.css';
 				width: 100%;
 				max-width: 50%;
 				gap: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+				will-change: transform;
 			}
 
 			.prompter-row {
@@ -413,6 +416,10 @@ import '../styles/global.css';
 				transition: transform 0.3s ease;
 			}
 
+			@media (min-width: 2000px) {
+				.prompter-column { max-width: 40%; }
+			}
+
 			@media (max-width: 1024px) {
 				.prompter-column { max-width: 80%; }
 			}
@@ -421,7 +428,7 @@ import '../styles/global.css';
 				.prompter-column { max-width: 95%; }
 			}
 
-			/* Glass container — outer layer, semi-dark for readability */
+			/* Glass container — outer layer */
 			.glass-container {
 				position: relative;
 				width: 100%;
@@ -430,6 +437,7 @@ import '../styles/global.css';
 				background: rgba(255, 255, 255, 0.04);
 				backdrop-filter: blur(40px) saturate(150%);
 				-webkit-backdrop-filter: blur(40px) saturate(150%);
+				will-change: transform, min-height, border-radius;
 				border: 1px solid rgba(255, 255, 255, 0.1);
 				box-shadow:
 					0 8px 32px rgba(0, 0, 0, 0.25),
@@ -686,6 +694,89 @@ import '../styles/global.css';
 				z-index: 2;
 			}
 
+
+			/* ── MOBILE ── */
+			@media (max-width: 767px) {
+				.scroll-wrapper {
+					height: 120svh;
+				}
+				.hero-sticky {
+					height: 60svh;
+				}
+				.hero-letter {
+					font-size: 38vw;
+					letter-spacing: -0.02em;
+				}
+				.hero-pause-btn {
+					width: 36px;
+					height: 36px;
+					bottom: 0.75rem;
+					right: 1.5rem;
+					margin-right: 0;
+				}
+				.glass-container {
+					min-height: clamp(10rem, 8rem + 6vw, 16rem);
+				}
+				.prompter-textarea-wrap {
+					min-height: clamp(8rem, 6rem + 5vw, 14rem);
+				}
+				.prompter-dropdown {
+					display: none !important;
+				}
+				.prompter-fixed {
+					align-items: flex-end;
+					padding-bottom: 1rem;
+				}
+				.prompter-column {
+					gap: 0.5rem;
+				}
+				.prompt-bubbles {
+					order: -1;
+					justify-content: flex-start;
+				}
+				.glass-container {
+					min-height: calc(40svh - 5rem);
+				}
+				.prompter-textarea-wrap {
+					min-height: calc(40svh - 7rem);
+				}
+				.matrix-cursor {
+					display: none !important;
+				}
+				/* Force light mode on mobile — prompter always on white bg */
+				.prompter-textarea {
+					color: rgba(0, 0, 0, 0.85);
+					caret-color: rgba(0, 0, 0, 0.85);
+				}
+				.prompter-textarea::placeholder {
+					color: rgba(0, 0, 0, 0.4);
+					text-shadow: none;
+					letter-spacing: normal;
+				}
+				.glass-container {
+					border-color: rgba(0, 0, 0, 0.08);
+					box-shadow:
+						0 8px 32px rgba(0, 0, 0, 0.1),
+						inset 0 1px 0 rgba(255, 255, 255, 0.5);
+				}
+				.prompter-textarea-wrap {
+					border-color: rgba(0, 0, 0, 0.06);
+					box-shadow:
+						inset 0 2px 8px rgba(0, 0, 0, 0.08),
+						inset 0 1px 2px rgba(0, 0, 0, 0.06);
+				}
+				.prompt-bubble {
+					background: rgba(0, 0, 0, 0.06);
+					color: rgba(0, 0, 0, 0.8);
+					box-shadow:
+						0 0 0 0.75px rgba(0, 0, 0, 0.06),
+						0 4px 12px rgba(0, 0, 0, 0.06);
+				}
+				.prompter-dropdown {
+					background: rgba(0, 0, 0, 0.06);
+					color: rgba(0, 0, 0, 0.7);
+				}
+			}
 		</style>
 
 
@@ -722,85 +813,152 @@ import '../styles/global.css';
 			const prompterColumn = document.querySelector<HTMLElement>('.prompter-column')!;
 
 			const vh = window.innerHeight;
-			const colH = prompterColumn.offsetHeight;
+			const isMobile = window.innerWidth < 768;
 
-			// Positions (y values for the column inside flex-start container)
-			const yOffScreen = vh + 100;                  // below viewport
-			const yCentered = (vh - colH) / 2;            // vertically centered
-			const yTop = 16;                               // 1rem from top
-
-			// Start off-screen
-			gsap.set(prompterColumn, { y: yOffScreen });
-			gsap.set('.prompt-bubble', { y: 20, opacity: 0, scale: 0.9 });
-
-			// Phase 1: Slide up from below to center
-			const slideTl = gsap.timeline({
-				scrollTrigger: {
-					trigger: '#scroll-wrapper',
-					start: `0px top`,
-					end: `${vh}px top`,
-					scrub: true,
-				},
-			});
+			// Center based on glass container (the visible element), not full column
+			const glassH = glassContainer.offsetHeight;
+			const glassOffsetInCol = glassContainer.getBoundingClientRect().top - prompterColumn.getBoundingClientRect().top;
+			const yOffScreen = vh * 1.5;
+			const yCentered = (vh - glassH) / 2 - glassOffsetInCol;
+			const yTop = 16;
 
 			const sceneVignette = document.getElementById('scene-vignette')!;
 
-			slideTl
-				.to(prompterColumn, {
-					y: yCentered,
-					duration: 1,
-					ease: 'power2.out',
-				})
-				.to(sceneVignette, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.3)
-				.to('.prompt-bubble', {
-					y: 0, opacity: 1, scale: 1,
-					stagger: 0.05,
-					duration: 0.4,
-					ease: 'back.out(1.7)',
-				}, 0.5);
+			// Helper: build collapse animations (shared between mobile & desktop)
+			function buildCollapse(tl: gsap.core.Timeline, withBubblesAndDropdown = true) {
+				tl
+					.to(glassContainer, { keyframes: [
+						{ minHeight: '120px', padding: '3px', borderRadius: '16px', duration: 0.6 },
+						{ minHeight: '40px', padding: '2px', borderRadius: '30px', duration: 0.4 },
+					] }, 0)
+					.to(textareaWrap, { keyframes: [
+						{ minHeight: '100px', borderRadius: '12px', duration: 0.6 },
+						{ minHeight: '36px', borderRadius: '30px', duration: 0.4 },
+					] }, 0)
+					.to('.prompter-textarea', {
+						paddingTop: '0px', paddingBottom: '0px',
+						height: '36px', lineHeight: '36px',
+						duration: 1,
+					}, 0)
+					.to('#generate-btn', { width: '30px', height: '30px', duration: 1 }, 0)
+					.to('#generate-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
+					.to(overlayTop, { opacity: 0, duration: 0.3 }, 0)
+					.to(overlayBottom, { height: '36px', padding: '3px', duration: 1 }, 0);
 
-			// Phase 2: Collapse to pill + move to top
-			const collapseTl = gsap.timeline({
-				defaults: { duration: 1, ease: 'none' },
-				scrollTrigger: {
-					trigger: '#scroll-wrapper',
-					start: `${vh}px top`,
-					end: `${vh * 2}px top`,
-					scrub: true,
-				},
-			});
+				if (withBubblesAndDropdown) {
+					tl
+						.to(bubblesWrap, { y: -20, opacity: 0, pointerEvents: 'none', duration: 0.4 }, 0)
+						.to(dropdownBtn, { width: '36px', height: '36px', minWidth: '36px', duration: 1 }, 0)
+						.to('#dropdown-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
+						.to(dropdownBtn, {
+							opacity: 1, pointerEvents: 'auto', duration: 0.4,
+							onComplete: () => dropdownBtn.classList.add('is-visible'),
+							onReverseComplete: () => {
+								dropdownBtn.classList.remove('is-visible', 'is-open');
+								bubblesOpen = false;
+							},
+						}, 0.5);
+				}
+			}
 
-			collapseTl
-				.to(prompterColumn, { y: yTop, duration: 1 }, 0)
-				.to(sceneVignette, { opacity: 0, duration: 0.5, ease: 'power2.in' }, 0)
-				.to(glassContainer, { keyframes: [
-					{ minHeight: '120px', padding: '3px', borderRadius: '16px', duration: 0.6 },
-					{ minHeight: '40px', padding: '2px', borderRadius: '30px', duration: 0.4 },
-				] }, 0)
-				.to(textareaWrap, { keyframes: [
-					{ minHeight: '100px', borderRadius: '12px', duration: 0.6 },
-					{ minHeight: '36px', borderRadius: '30px', duration: 0.4 },
-				] }, 0)
-				.to('.prompter-textarea', {
-					paddingTop: '0px', paddingBottom: '0px',
-					height: '36px', lineHeight: '36px',
-					duration: 1,
-				}, 0)
-				.to('#generate-btn', { width: '30px', height: '30px', duration: 1 }, 0)
-				.to('#generate-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
-				.to(overlayTop, { opacity: 0, duration: 0.3 }, 0)
-				.to(overlayBottom, { height: '36px', padding: '3px', duration: 1 }, 0)
-				.to(bubblesWrap, { y: -20, opacity: 0, pointerEvents: 'none', duration: 0.4 }, 0)
-				.to(dropdownBtn, { width: '36px', height: '36px', minWidth: '36px', duration: 1 }, 0)
-				.to('#dropdown-btn svg', { width: '14px', height: '14px', duration: 1 }, 0)
-				.to(dropdownBtn, {
-					opacity: 1, pointerEvents: 'auto', duration: 0.4,
-					onComplete: () => dropdownBtn.classList.add('is-visible'),
-					onReverseComplete: () => {
-						dropdownBtn.classList.remove('is-visible', 'is-open');
-						bubblesOpen = false;
+			if (isMobile) {
+				// ── MOBILE: prompter visible at bottom via flex-end, collapses in place ──
+				gsap.set(prompterColumn, { y: 0 });
+				gsap.set('.prompt-bubble', { y: 0, opacity: 1, scale: 1 });
+
+				const mobileScrollEnd = vh * 0.6; // matches 60svh hero
+
+				const mobileCollapseTl = gsap.timeline({
+					defaults: { duration: 1, ease: 'none' },
+					scrollTrigger: {
+						trigger: '#scroll-wrapper',
+						start: '0px top',
+						end: `${mobileScrollEnd}px top`,
+						scrub: 0.3,
 					},
-				}, 0.5);
+				});
+
+				// Collapse glass only — bubbles handled separately
+				buildCollapse(mobileCollapseTl, false);
+
+				// Track collapsed state for bubbles show/hide
+				let mobileCollapsed = false;
+
+				ScrollTrigger.create({
+					trigger: '#scroll-wrapper',
+					start: '0px top',
+					end: `${mobileScrollEnd}px top`,
+					onUpdate(self) {
+						const collapsed = self.progress > 0.7;
+						if (collapsed !== mobileCollapsed) {
+							mobileCollapsed = collapsed;
+							// Only hide bubbles if textarea is NOT focused
+							if (collapsed && document.activeElement !== promptInput) {
+								gsap.to(bubblesWrap, { y: -10, opacity: 0, pointerEvents: 'none', duration: 0.25, overwrite: true });
+							} else if (!collapsed) {
+								gsap.to(bubblesWrap, { y: 0, opacity: 1, pointerEvents: 'auto', duration: 0.3, overwrite: true });
+							}
+						}
+					},
+				});
+
+				// Show bubbles on textarea focus when collapsed
+				promptInput.addEventListener('focus', () => {
+					if (mobileCollapsed) {
+						gsap.to(bubblesWrap, { y: 0, opacity: 1, pointerEvents: 'auto', duration: 0.3, ease: 'back.out(1.7)', overwrite: true });
+					}
+				});
+
+				promptInput.addEventListener('blur', () => {
+					if (mobileCollapsed) {
+						gsap.to(bubblesWrap, { y: -10, opacity: 0, pointerEvents: 'none', duration: 0.2, overwrite: true });
+					}
+				});
+			} else {
+				// ── DESKTOP: slide from bottom, then collapse ──
+				gsap.set(prompterColumn, { y: yOffScreen });
+				gsap.set('.prompt-bubble', { y: 20, opacity: 0, scale: 0.9 });
+
+				// Phase 1: Slide up from below to center
+				const slideTl = gsap.timeline({
+					scrollTrigger: {
+						trigger: '#scroll-wrapper',
+						start: `0px top`,
+						end: `${vh}px top`,
+						scrub: 0.3,
+					},
+				});
+
+				slideTl
+					.to(prompterColumn, {
+						y: yCentered,
+						duration: 1,
+						ease: 'power2.out',
+					})
+					.to(sceneVignette, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.3)
+					.to('.prompt-bubble', {
+						y: 0, opacity: 1, scale: 1,
+						stagger: 0.05,
+						duration: 0.4,
+						ease: 'back.out(1.7)',
+					}, 0.5);
+
+				// Phase 2: Collapse to pill + move to top
+				const collapseTl = gsap.timeline({
+					defaults: { duration: 1, ease: 'none' },
+					scrollTrigger: {
+						trigger: '#scroll-wrapper',
+						start: `${vh}px top`,
+						end: `${vh * 2}px top`,
+						scrub: 0.3,
+					},
+				});
+
+				collapseTl
+					.to(prompterColumn, { y: yTop, duration: 1 }, 0)
+					.to(sceneVignette, { opacity: 0, duration: 0.5, ease: 'power2.in' }, 0);
+				buildCollapse(collapseTl);
+			}
 
 			/* ── INTRO SECTION ── */
 			gsap.fromTo('.intro-el',
@@ -1455,43 +1613,65 @@ import '../styles/global.css';
 				},
 			});
 
-						// Time slows — slideTl phase (prompter slides to center): speed 1 → 0.1
-			ScrollTrigger.create({
-				trigger: '#scroll-wrapper',
-				start: '0px top',
-				end: `${vh}px top`,
-				scrub: true,
-				onUpdate(self) {
-					const speed = gsap.utils.interpolate(1, 0.1, self.progress);
-					frostTl.timeScale(speed);
-					galleryTls.forEach(tl => tl.timeScale(speed));
-				},
-			});
+				if (isMobile) {
+				// Mobile: single scroll range for time-slow + parallax
+				const mEnd = vh * 0.6;
+				ScrollTrigger.create({
+					trigger: '#scroll-wrapper',
+					start: '0px top',
+					end: `${mEnd}px top`,
+					scrub: 0.3,
+					onUpdate(self) {
+						const p = self.progress;
+						const speed = p < 0.5
+							? gsap.utils.interpolate(1, 0.1, p * 2)
+							: gsap.utils.interpolate(0.1, 1, (p - 0.5) * 2);
+						frostTl.timeScale(speed);
+						galleryTls.forEach(tl => tl.timeScale(speed));
+						gsap.set(galleryEls, { y: -70 * p });
+						gsap.set('.hero-letter', { y: `${12 * p}%` });
+					},
+				});
+			} else {
+				// Desktop: two-phase time-slow + parallax
+				// Time slows — slideTl phase (prompter slides to center): speed 1 → 0.1
+				ScrollTrigger.create({
+					trigger: '#scroll-wrapper',
+					start: '0px top',
+					end: `${vh}px top`,
+					scrub: 0.3,
+					onUpdate(self) {
+						const speed = gsap.utils.interpolate(1, 0.1, self.progress);
+						frostTl.timeScale(speed);
+						galleryTls.forEach(tl => tl.timeScale(speed));
+					},
+				});
 
-			// Time slows — collapseTl phase (prompter collapses to top): speed 0.1 → 1
-			ScrollTrigger.create({
-				trigger: '#scroll-wrapper',
-				start: `${vh}px top`,
-				end: `${vh * 2}px top`,
-				scrub: true,
-				onUpdate(self) {
-					const speed = gsap.utils.interpolate(0.1, 1, self.progress);
-					frostTl.timeScale(speed);
-					galleryTls.forEach(tl => tl.timeScale(speed));
-				},
-			});
+				// Time slows — collapseTl phase (prompter collapses to top): speed 0.1 → 1
+				ScrollTrigger.create({
+					trigger: '#scroll-wrapper',
+					start: `${vh}px top`,
+					end: `${vh * 2}px top`,
+					scrub: 0.3,
+					onUpdate(self) {
+						const speed = gsap.utils.interpolate(0.1, 1, self.progress);
+						frostTl.timeScale(speed);
+						galleryTls.forEach(tl => tl.timeScale(speed));
+					},
+				});
 
-			// Parallax on hero exit — gallery up, RUT down
-			ScrollTrigger.create({
-				trigger: '#scroll-wrapper',
-				start: `${vh}px top`,
-				end: `${vh * 2}px top`,
-				scrub: true,
-				onUpdate(self) {
-					gsap.set(galleryEls, { y: -70 * self.progress });
-					gsap.set('.hero-letter', { y: `${12 * self.progress}%` });
-				},
-			});
+				// Parallax on hero exit — gallery up, RUT down
+				ScrollTrigger.create({
+					trigger: '#scroll-wrapper',
+					start: `${vh}px top`,
+					end: `${vh * 2}px top`,
+					scrub: 0.3,
+					onUpdate(self) {
+						gsap.set(galleryEls, { y: -70 * self.progress });
+						gsap.set('.hero-letter', { y: `${12 * self.progress}%` });
+					},
+				});
+			}
 
 			heroPauseBtn.addEventListener('click', () => {
 				heroPaused = !heroPaused;
