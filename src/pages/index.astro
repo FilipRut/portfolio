@@ -729,13 +729,14 @@ import '../styles/global.css';
 				}
 				.prompt-bubbles {
 					position: absolute;
-					bottom: 100%;
-					left: 0;
-					margin-bottom: 0.5rem;
+					bottom: 3.5rem;
+					left: 0.75rem;
+					right: 0.75rem;
 					justify-content: flex-start;
 					opacity: 0;
 					visibility: hidden;
 					pointer-events: none;
+					z-index: 5;
 				}
 				.matrix-cursor {
 					display: none !important;
@@ -875,17 +876,24 @@ import '../styles/global.css';
 
 				let mobileExpanded = false;
 
-				// Expand on focus
+				// Tap on pill → focus textarea (overlay-bottom blocks direct textarea tap)
+				glassContainer.addEventListener('click', () => {
+					if (!mobileExpanded) {
+						promptInput.focus();
+					}
+				});
+
+				// Expand on focus → 50vh with bubbles inside
 				promptInput.addEventListener('focus', () => {
 					if (mobileExpanded) return;
 					mobileExpanded = true;
 					const expandTl = gsap.timeline({ defaults: { duration: 0.4, ease: 'power3.out' } });
 					expandTl
-						.to(glassContainer, { minHeight: 'clamp(10rem, 8rem + 6vw, 16rem)', padding: 'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)', borderRadius: 'clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem)' }, 0)
-						.to(textareaWrap, { minHeight: 'clamp(8rem, 6rem + 5vw, 14rem)', borderRadius: 'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)' }, 0)
+						.to(glassContainer, { minHeight: '50vh', padding: 'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)', borderRadius: 'clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem)' }, 0)
+						.to(textareaWrap, { minHeight: 'calc(50vh - 2rem)', borderRadius: 'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)' }, 0)
 						.to('.prompter-textarea', { paddingTop: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)', paddingBottom: 'clamp(3.5rem, 3rem + 1vw, 5rem)', height: '100%', lineHeight: '1.6' }, 0)
-						.to('#generate-btn', { width: '48px', height: '48px' }, 0)
-						.to('#generate-btn svg', { width: '20px', height: '20px' }, 0)
+						.to('#generate-btn', { width: '32px', height: '32px' }, 0)
+						.to('#generate-btn svg', { width: '18px', height: '18px' }, 0)
 						.to(overlayTop, { opacity: 1 }, 0)
 						.to(overlayBottom, { height: 'auto', padding: 'clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem)' }, 0)
 						.to(bubblesWrap, { opacity: 1, visibility: 'visible', pointerEvents: 'auto', duration: 0.3 }, 0.15)
