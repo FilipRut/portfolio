@@ -698,7 +698,7 @@ import '../styles/global.css';
 			/* ── MOBILE ── */
 			@media (max-width: 767px) {
 				.scroll-wrapper {
-					height: 120svh;
+					height: 60svh;
 				}
 				.hero-sticky {
 					height: 60svh;
@@ -727,18 +727,15 @@ import '../styles/global.css';
 					align-items: flex-end;
 					padding-bottom: 1rem;
 				}
-				.prompter-column {
-					gap: 0.5rem;
-				}
 				.prompt-bubbles {
-					order: -1;
+					position: absolute;
+					bottom: 100%;
+					left: 0;
+					margin-bottom: 0.5rem;
 					justify-content: flex-start;
-				}
-				.glass-container {
-					min-height: calc(40svh - 5rem);
-				}
-				.prompter-textarea-wrap {
-					min-height: calc(40svh - 7rem);
+					opacity: 0;
+					visibility: hidden;
+					pointer-events: none;
 				}
 				.matrix-cursor {
 					display: none !important;
@@ -784,6 +781,8 @@ import '../styles/global.css';
 			import gsap from 'gsap';
 			import { ScrollTrigger } from 'gsap/ScrollTrigger';
 			gsap.registerPlugin(ScrollTrigger);
+
+			function init() {
 
 			/* ── HERO ENTRANCE ── */
 			const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
@@ -862,57 +861,52 @@ import '../styles/global.css';
 			}
 
 			if (isMobile) {
-				// ── MOBILE: prompter visible at bottom via flex-end, collapses in place ──
+				// ── MOBILE: composer starts collapsed (pill) at bottom ──
 				gsap.set(prompterColumn, { y: 0 });
-				gsap.set('.prompt-bubble', { y: 0, opacity: 1, scale: 1 });
+				gsap.set(glassContainer, { minHeight: '40px', padding: '2px', borderRadius: '30px' });
+				gsap.set(textareaWrap, { minHeight: '36px', borderRadius: '30px' });
+				gsap.set('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', height: '36px', lineHeight: '36px' });
+				gsap.set('#generate-btn', { width: '30px', height: '30px' });
+				gsap.set('#generate-btn svg', { width: '14px', height: '14px' });
+				gsap.set(overlayTop, { opacity: 0 });
+				gsap.set(overlayBottom, { height: '36px', padding: '3px' });
+				gsap.set(bubblesWrap, { opacity: 0, visibility: 'hidden', pointerEvents: 'none' });
+				gsap.set('.prompt-bubble', { y: 10, opacity: 0, scale: 0.9 });
 
-				const mobileScrollEnd = vh * 0.6; // matches 60svh hero
+				let mobileExpanded = false;
 
-				const mobileCollapseTl = gsap.timeline({
-					defaults: { duration: 1, ease: 'none' },
-					scrollTrigger: {
-						trigger: '#scroll-wrapper',
-						start: '0px top',
-						end: `${mobileScrollEnd}px top`,
-						scrub: 0.3,
-					},
-				});
-
-				// Collapse glass only — bubbles handled separately
-				buildCollapse(mobileCollapseTl, false);
-
-				// Track collapsed state for bubbles show/hide
-				let mobileCollapsed = false;
-
-				ScrollTrigger.create({
-					trigger: '#scroll-wrapper',
-					start: '0px top',
-					end: `${mobileScrollEnd}px top`,
-					onUpdate(self) {
-						const collapsed = self.progress > 0.7;
-						if (collapsed !== mobileCollapsed) {
-							mobileCollapsed = collapsed;
-							// Only hide bubbles if textarea is NOT focused
-							if (collapsed && document.activeElement !== promptInput) {
-								gsap.to(bubblesWrap, { y: -10, opacity: 0, pointerEvents: 'none', duration: 0.25, overwrite: true });
-							} else if (!collapsed) {
-								gsap.to(bubblesWrap, { y: 0, opacity: 1, pointerEvents: 'auto', duration: 0.3, overwrite: true });
-							}
-						}
-					},
-				});
-
-				// Show bubbles on textarea focus when collapsed
+				// Expand on focus
 				promptInput.addEventListener('focus', () => {
-					if (mobileCollapsed) {
-						gsap.to(bubblesWrap, { y: 0, opacity: 1, pointerEvents: 'auto', duration: 0.3, ease: 'back.out(1.7)', overwrite: true });
-					}
+					if (mobileExpanded) return;
+					mobileExpanded = true;
+					const expandTl = gsap.timeline({ defaults: { duration: 0.4, ease: 'power3.out' } });
+					expandTl
+						.to(glassContainer, { minHeight: 'clamp(10rem, 8rem + 6vw, 16rem)', padding: 'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)', borderRadius: 'clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem)' }, 0)
+						.to(textareaWrap, { minHeight: 'clamp(8rem, 6rem + 5vw, 14rem)', borderRadius: 'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)' }, 0)
+						.to('.prompter-textarea', { paddingTop: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)', paddingBottom: 'clamp(3.5rem, 3rem + 1vw, 5rem)', height: '100%', lineHeight: '1.6' }, 0)
+						.to('#generate-btn', { width: '48px', height: '48px' }, 0)
+						.to('#generate-btn svg', { width: '20px', height: '20px' }, 0)
+						.to(overlayTop, { opacity: 1 }, 0)
+						.to(overlayBottom, { height: 'auto', padding: 'clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem)' }, 0)
+						.to(bubblesWrap, { opacity: 1, visibility: 'visible', pointerEvents: 'auto', duration: 0.3 }, 0.15)
+						.to('.prompt-bubble', { y: 0, opacity: 1, scale: 1, stagger: 0.05, duration: 0.3, ease: 'back.out(1.7)' }, 0.2);
 				});
 
+				// Collapse on blur
 				promptInput.addEventListener('blur', () => {
-					if (mobileCollapsed) {
-						gsap.to(bubblesWrap, { y: -10, opacity: 0, pointerEvents: 'none', duration: 0.2, overwrite: true });
-					}
+					if (!mobileExpanded) return;
+					mobileExpanded = false;
+					const collapseTl = gsap.timeline({ defaults: { duration: 0.3, ease: 'power2.in' } });
+					collapseTl
+						.to(bubblesWrap, { opacity: 0, visibility: 'hidden', pointerEvents: 'none', duration: 0.15 }, 0)
+						.to('.prompt-bubble', { y: 10, opacity: 0, scale: 0.9, duration: 0.15 }, 0)
+						.to(glassContainer, { minHeight: '40px', padding: '2px', borderRadius: '30px' }, 0.1)
+						.to(textareaWrap, { minHeight: '36px', borderRadius: '30px' }, 0.1)
+						.to('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', height: '36px', lineHeight: '36px' }, 0.1)
+						.to('#generate-btn', { width: '30px', height: '30px' }, 0.1)
+						.to('#generate-btn svg', { width: '14px', height: '14px' }, 0.1)
+						.to(overlayTop, { opacity: 0, duration: 0.15 }, 0)
+						.to(overlayBottom, { height: '36px', padding: '3px' }, 0.1);
 				});
 			} else {
 				// ── DESKTOP: slide from bottom, then collapse ──
@@ -1613,26 +1607,7 @@ import '../styles/global.css';
 				},
 			});
 
-				if (isMobile) {
-				// Mobile: single scroll range for time-slow + parallax
-				const mEnd = vh * 0.6;
-				ScrollTrigger.create({
-					trigger: '#scroll-wrapper',
-					start: '0px top',
-					end: `${mEnd}px top`,
-					scrub: 0.3,
-					onUpdate(self) {
-						const p = self.progress;
-						const speed = p < 0.5
-							? gsap.utils.interpolate(1, 0.1, p * 2)
-							: gsap.utils.interpolate(0.1, 1, (p - 0.5) * 2);
-						frostTl.timeScale(speed);
-						galleryTls.forEach(tl => tl.timeScale(speed));
-						gsap.set(galleryEls, { y: -70 * p });
-						gsap.set('.hero-letter', { y: `${12 * p}%` });
-					},
-				});
-			} else {
+				if (!isMobile) {
 				// Desktop: two-phase time-slow + parallax
 				// Time slows — slideTl phase (prompter slides to center): speed 1 → 0.1
 				ScrollTrigger.create({
@@ -1779,6 +1754,14 @@ import '../styles/global.css';
 				if (e.key === 'Enter' && !e.shiftKey) rocketBuddy();
 				if (e.key === ' ') jumpBuddy();
 			});
+
+			} // end init()
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', init);
+			} else {
+				init();
+			}
 		</script>
 
 	</body>
