@@ -1,0 +1,336 @@
+---
+import PixelBuddy from './PixelBuddy.astro';
+---
+<div id="prompter-fixed" class="prompter-fixed">
+    <!-- SVG frosted glass filter -->
+    <svg style="position:absolute;width:0;height:0;">
+        <defs>
+            <filter id="frosted" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="2" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="prompter-column">
+        <div class="prompter-row">
+            <!-- Dropdown toggle -->
+            <button id="dropdown-btn" class="prompter-dropdown" aria-label="Show suggestions">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                    <path d="M6 9l6 6 6-6"></path>
+                </svg>
+            </button>
+
+            <div class="glass-wrapper">
+                <div class="glass-container">
+                    <div class="prompter-textarea-wrap">
+                        <textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
+                        <div id="matrix-cursor" class="matrix-cursor"></div>
+
+                        <!-- Response overlay (top) -->
+                        <div class="glass-overlay-top">
+                            <div id="ai-response-title" class="text-white font-medium leading-none" style="font-size: clamp(2rem, 1.5rem + 2vw, 4rem);"></div>
+                            <p id="ai-response-text" class="font-normal leading-relaxed" style="font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.1rem); margin-top: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem); color: rgba(255,255,255,0.7);"></p>
+                        </div>
+
+                        <!-- Loading spinner -->
+                        <div id="chat-spinner" class="chat-spinner">
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                            <div class="chat-spinner-dot"></div>
+                        </div>
+
+                        <!-- Send button -->
+                        <div class="glass-overlay-bottom">
+                            <div class="flex-1"></div>
+                            <button id="generate-btn" class="prompter-send" aria-label="Send">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                                    <path d="M22 2L11 13"></path>
+                                    <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <PixelBuddy />
+            </div>
+        </div>
+
+        <!-- Suggestion bubbles -->
+        <div class="prompt-bubbles">
+            <button class="prompt-bubble" data-prompt="What projects have you worked on?">What projects have you worked on?</button>
+            <button class="prompt-bubble" data-prompt="What does your design process look like?">What does your design process look like?</button>
+            <button class="prompt-bubble" data-prompt="What tools do you use?">What tools do you use?</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .prompter-fixed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        padding: 0 clamp(1.5rem, 1rem + 2vw, 3rem);
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .prompter-fixed > .prompter-column {
+        pointer-events: auto;
+    }
+
+    .prompter-column {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: 50%;
+        gap: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+        will-change: transform;
+    }
+
+    .prompter-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: clamp(0.5rem, 0.3rem + 0.3vw, 0.75rem);
+    }
+
+    .prompter-dropdown {
+        position: absolute;
+        left: -56px;
+        top: 0;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        border: 0.75px solid transparent;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        line-height: 0;
+        transition: none;
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.08),
+            0 8px 20px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(12px) saturate(120%);
+        -webkit-backdrop-filter: blur(12px) saturate(120%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .prompter-dropdown.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(0);
+    }
+
+    .prompter-dropdown:hover {
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.15),
+            0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .prompter-dropdown.is-open svg {
+        transform: rotate(180deg);
+    }
+
+    .prompter-dropdown svg {
+        transition: transform 0.3s ease;
+    }
+
+    @media (min-width: 2000px) {
+        .prompter-column { max-width: 40%; }
+    }
+
+    @media (max-width: 1024px) {
+        .prompter-column { max-width: 80%; }
+    }
+
+    @media (max-width: 640px) {
+        .prompter-column { max-width: 95%; }
+    }
+
+    .glass-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .glass-container {
+        position: relative;
+        width: 100%;
+        min-height: clamp(16rem, 12rem + 8vw, 24rem);
+        border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(24px) saturate(150%);
+        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        will-change: transform, min-height, border-radius;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        padding: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem);
+    }
+
+    .prompter-textarea-wrap {
+        position: relative;
+        flex: 1;
+        min-height: clamp(14rem, 10rem + 7vw, 22rem);
+        border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(16px) saturate(130%);
+        -webkit-backdrop-filter: blur(16px) saturate(130%);
+        border: 0.75px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+            inset 0 2px 8px rgba(0, 0, 0, 0.35),
+            inset 0 1px 2px rgba(0, 0, 0, 0.25),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+    }
+
+    .prompter-textarea {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.9375rem, 0.85rem + 0.25vw, 1.1rem);
+        padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+        padding-bottom: clamp(3.5rem, 3rem + 1vw, 5rem);
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.9);
+        outline: none;
+        resize: none;
+        overflow: hidden;
+        line-height: 1.6;
+        caret-color: transparent;
+        scrollbar-width: none;
+    }
+
+    .matrix-cursor {
+        position: absolute;
+        width: 2px;
+        background: rgba(255, 255, 255, 0.55);
+        pointer-events: none;
+        z-index: 5;
+        display: none;
+        animation: matrix-blink 0.9s step-start infinite;
+    }
+
+    @keyframes matrix-blink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+    }
+
+    /* Light mode overrides */
+    .prompter-fixed.on-light .prompter-textarea { color: rgba(0, 0, 0, 0.85); }
+    .prompter-fixed.on-light .prompter-textarea::placeholder { color: rgba(0, 0, 0, 0.45); }
+    .prompter-fixed.on-light .matrix-cursor { background: rgba(0, 0, 0, 0.45); }
+    .prompter-fixed.on-light .glass-container {
+        border-color: rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .prompter-fixed.on-light .prompter-textarea-wrap {
+        border-color: rgba(0, 0, 0, 0.06);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+    .prompter-fixed.on-light #ai-response-title { color: rgba(0, 0, 0, 0.9); }
+    .prompter-fixed.on-light #ai-response-text { color: rgba(0, 0, 0, 0.55); }
+    .prompter-fixed.on-light .prompt-bubble {
+        background: rgba(0, 0, 0, 0.06);
+        color: rgba(0, 0, 0, 0.8);
+        box-shadow: 0 0 0 0.75px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+    .prompter-fixed.on-light .prompter-dropdown {
+        background: rgba(0, 0, 0, 0.06);
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    .glass-overlay-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: clamp(1.25rem, 1rem + 0.5vw, 2rem);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .glass-overlay-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: flex-end;
+        gap: clamp(0.5rem, 0.3rem + 0.3vw, 0.75rem);
+        padding: clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem);
+        z-index: 2;
+    }
+
+    .prompter-send {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(229, 62, 62, 0.85);
+        color: #fff;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(12px);
+    }
+
+    .prompt-bubbles {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: clamp(0.4rem, 0.3rem + 0.25vw, 0.6rem);
+    }
+
+    .prompt-bubble {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.75rem, 0.65rem + 0.2vw, 0.9rem);
+        padding: clamp(0.3rem, 0.25rem + 0.15vw, 0.45rem) clamp(0.7rem, 0.5rem + 0.35vw, 1rem);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 767px) {
+        .prompter-fixed { align-items: flex-end; padding-bottom: 1rem; }
+        .prompter-dropdown { display: none !important; }
+        .prompt-bubbles {
+            position: absolute;
+            bottom: 3.5rem;
+            left: 0.75rem;
+            right: 0.75rem;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .prompter-textarea { color: rgba(0, 0, 0, 0.85); }
+        .glass-container { background: rgba(255, 255, 255, 0.9); }
+    }
+</style>

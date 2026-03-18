@@ -1,0 +1,124 @@
+---
+---
+<div id="chat-overlay" class="chat-overlay">
+    <div id="chat-dim" class="chat-dim"></div>
+    <div id="chat-modal" class="chat-modal">
+        <button id="chat-close" class="chat-close" aria-label="Close chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrap">
+                <input id="chat-input" type="text" class="chat-input" placeholder="Type a message..." />
+                <button id="chat-send" class="chat-send-btn" aria-label="Send">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2L11 13"></path>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .chat-overlay.is-active {
+        pointer-events: auto;
+        opacity: 1;
+        visibility: visible;
+    }
+    .chat-dim {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+    }
+    .chat-modal {
+        position: absolute;
+        bottom: clamp(1.5rem, 1rem + 2vw, 3rem);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 50%;
+        max-height: calc(100vh - 4rem);
+        border-radius: 1.5rem;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(24px) saturate(150%);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 3.5rem 1.25rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .chat-input-area {
+        padding: 0.75rem 1rem 1rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .chat-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 999px;
+        padding: 0.3rem 0.3rem 0.3rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .chat-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        color: rgba(0, 0, 0, 0.85);
+        outline: none;
+    }
+    .chat-send-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(229, 62, 62, 0.9);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+    .chat-close {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.4);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+    @media (max-width: 1024px) {
+        .chat-modal { max-width: 80%; }
+    }
+    @media (max-width: 640px) {
+        .chat-modal { max-width: 96%; bottom: 0.75rem; max-height: calc(100vh - 1.5rem); }
+    }
+</style>

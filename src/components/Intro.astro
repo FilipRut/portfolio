@@ -1,0 +1,44 @@
+---
+---
+<section id="intro" class="w-full bg-white">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center" style="padding: clamp(1rem, 0.5rem + 1vw, 1.5rem) 0; gap: clamp(1.5rem, 1rem + 2vw, 3rem);">
+        <!-- Photo + Heading group -->
+        <div class="flex items-center shrink-0" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);">
+            <img
+                src="https://placehold.co/111x160/e5e5e5/737373?text=Photo"
+                alt="Filip Rut"
+                class="intro-el object-cover rounded"
+                style="width: clamp(4rem, 3rem + 3vw, 7rem); height: clamp(5.5rem, 4rem + 4vw, 10rem);"
+            />
+            <h2 class="intro-el text-stone-950 font-normal leading-tight" style="font-size: clamp(1.5rem, 1rem + 2.5vw, 3.5rem); max-width: 32rem;">
+                Leading above the corporate chaos
+            </h2>
+        </div>
+
+        <!-- Image + Description group -->
+        <div class="flex-1 flex items-center" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem); padding-left: clamp(0rem, 2vw, 5rem);">
+            <img
+                src="https://placehold.co/247x159/e5e5e5/737373?text=Keychains"
+                alt="Design artifacts"
+                class="intro-el object-cover shrink-0"
+                style="width: clamp(6rem, 4rem + 6vw, 15rem); height: clamp(4rem, 3rem + 4vw, 10rem);"
+            />
+            <p class="intro-el text-orange-950 font-normal leading-snug" style="font-size: clamp(0.875rem, 0.7rem + 0.8vw, 1.35rem);">
+                An experienced Lead UX/UI designer and Webflow developer, delivering high-quality designs and websites.
+            </p>
+        </div>
+    </div>
+</section>
+
+<style>
+    #intro {
+        min-height: 100vh;
+        padding: clamp(5rem, 4rem + 2vw, 7rem) clamp(1.5rem, 1rem + 3vw, 4rem) clamp(2rem, 1.5rem + 2vw, 4rem);
+    }
+    @media (max-width: 767px) {
+        #intro {
+            min-height: auto;
+            padding: clamp(1.5rem, 1rem + 1vw, 2rem) clamp(1.5rem, 1rem + 3vw, 4rem) 6rem;
+        }
+    }
+</style>

@@ -1,0 +1,220 @@
+---
+---
+<div id="scroll-wrapper" class="scroll-wrapper">
+    <section id="hero" class="hero-sticky" style="background-color: #E53E3E;">
+        <!-- Gradient overlay -->
+        <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 50% 0%, rgba(220,50,50,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(100,0,0,0.3) 0%, transparent 50%);"></div>
+
+        <!-- Frosted ribbed glass effect -->
+        <div id="hero-glass" class="hero-glass">
+            <div class="hero-glass-gradient"></div>
+            <div class="hero-glass-frost"></div>
+        </div>
+
+        <!-- 6 vertical lines → 5 columns -->
+        <div class="absolute inset-0 px-4 md:px-16 flex justify-between pointer-events-none">
+            <div class="hero-line w-[2px] h-full" style="background-color: rgba(23,23,23,0.25);"></div>
+            <div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
+            <div class="hero-line w-[2px] h-full hidden sm:block" style="background-color: rgba(23,23,23,0.25);"></div>
+            <div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
+            <div class="hero-line w-[2px] h-full hidden md:block" style="background-color: rgba(23,23,23,0.25);"></div>
+            <div class="hero-line w-[2px] h-full" style="background-color: rgba(23,23,23,0.25);"></div>
+        </div>
+
+        <!-- Top bar -->
+        <div class="relative z-10 w-full px-4 md:px-16 pt-6 md:pt-8 pb-4 grid grid-cols-2 md:grid-cols-5 self-start" style="align-items: center;">
+            <div class="flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Filip Rut</span></div>
+            <div class="hidden md:flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Lead UX/UI Designer</span></div>
+            <div class="hidden md:flex justify-center"><span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">10 yrs exp</span></div>
+            <div class="hidden md:flex justify-center">
+                <span class="hero-label hero-tag tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">
+                    <span style="opacity:0.55;">Warsaw time</span>
+                    <span style="opacity:0.35;">—</span>
+                    <span id="hero-clock"></span>
+                </span>
+            </div>
+            <div class="flex justify-center">
+                <a href="mailto:filiprut@example.com" class="hero-tag hero-contact-btn tracking-tight" style="font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);">Contact me</a>
+            </div>
+        </div>
+
+        <!-- Pause button -->
+        <button id="hero-pause-btn" class="hero-pause-btn" aria-label="Pause background animation">
+            <svg id="hero-pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="5" y="4" width="4" height="16" rx="1"/>
+                <rect x="15" y="4" width="4" height="16" rx="1"/>
+            </svg>
+            <svg id="hero-play-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+                <polygon points="6,4 20,12 6,20"/>
+            </svg>
+        </button>
+
+        <!-- Big RUT text -->
+        <div class="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none select-none" style="overflow: hidden; line-height: 0;">
+            <span class="hero-letter font-medium" style="color: #171717;">R</span>
+            <span class="hero-letter font-medium" style="color: #171717; position: relative; z-index: 3;">U</span>
+            <span class="hero-letter font-medium" style="color: #171717;">T</span>
+        </div>
+    </section>
+</div>
+
+<style>
+    /* Scroll wrapper — tall container, hero stays sticky inside */
+    .scroll-wrapper {
+        position: relative;
+        height: 200vh; /* 100vh slide + 100vh collapse */
+    }
+
+    /* Hero sticky inside wrapper */
+    .hero-sticky {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Frosted ribbed glass effect */
+    .hero-glass {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+        mask-image: linear-gradient(
+            to right,
+            rgba(0,0,0,0) 3%,
+            rgba(0,0,0,1) 15%,
+            rgba(0,0,0,1) 85%,
+            rgba(0,0,0,0) 97%
+        );
+    }
+
+    .hero-glass-gradient {
+        position: absolute;
+        inset: -20%;
+        background: radial-gradient(
+            ellipse at 50% 50%,
+            rgba(210, 50, 50, 0.15) 0%,
+            transparent 70%
+        );
+        mix-blend-mode: hard-light;
+    }
+
+    .hero-glass-frost {
+        position: absolute;
+        inset: 0;
+        width: 200%;
+        background-image: repeating-linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.04) 0%,
+            rgba(0, 0, 0, 0.39) 49%,
+            rgba(255, 255, 255, 0.27) 100%
+        );
+        background-size: 40px;
+        mix-blend-mode: color-dodge;
+        will-change: transform;
+        transform: translateZ(0);
+    }
+
+    .hero-letter {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(180px, min(61vh, 38vw), 1000px);
+        line-height: 0.82;
+        letter-spacing: 0.02em;
+        display: inline-block;
+        vertical-align: bottom;
+        margin-bottom: -0.08em;
+    }
+
+    .hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+        padding: clamp(0.3rem, 0.25rem + 0.15vw, 0.45rem) clamp(0.7rem, 0.5rem + 0.35vw, 1rem);
+        border-radius: 6px;
+        border: 0.75px solid transparent;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.9);
+        white-space: nowrap;
+        font-weight: 400;
+        font-size: clamp(0.75rem, 0.6rem + 0.4vw, 0.9rem);
+        line-height: 1;
+        letter-spacing: 0.03em;
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.08),
+            0 4px 12px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(12px) saturate(120%);
+        -webkit-backdrop-filter: blur(12px) saturate(120%);
+    }
+
+    .hero-pause-btn {
+        position: absolute;
+        bottom: clamp(1rem, 1.5vw, 2rem);
+        right: clamp(1.5rem, 4vw, 4rem);
+        margin-right: 1rem;
+        z-index: 10;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 0.75px solid transparent;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        line-height: 0;
+        transition: all 0.25s ease;
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.08),
+            0 8px 20px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(12px) saturate(120%);
+        -webkit-backdrop-filter: blur(12px) saturate(120%);
+    }
+
+    .hero-pause-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        transform: translateY(-1px) scale(1.08);
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.15),
+            0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .hero-contact-btn {
+        border-radius: 999px;
+        text-decoration: none;
+        cursor: pointer;
+        align-self: center;
+        transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .hero-contact-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow:
+            0 0 0 0.75px rgba(255, 255, 255, 0.15),
+            0 10px 24px rgba(0, 0, 0, 0.18);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 767px) {
+        .scroll-wrapper {
+            height: 60svh;
+        }
+        .hero-sticky {
+            height: 60svh;
+        }
+        .hero-letter {
+            font-size: 38vw;
+            letter-spacing: -0.02em;
+        }
+        .hero-pause-btn {
+            width: 36px;
+            height: 36px;
+            bottom: 0.75rem;
+            right: 1.5rem;
+            margin-right: 0;
+        }
+    }
+</style>
