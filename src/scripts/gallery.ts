@@ -16,7 +16,7 @@ export function initHeroGallery(vh: number, isMobile: boolean) {
     const topSafe = 88;
     const bottomSafe = heroH * 0.75;
 
-    const N = 9;
+    const N = 12; // More elements for better fill
     const photoData: { w: number; h: number; y: number }[] = [];
     for (let i = 0; i < N; i++) {
         const w = minW + Math.random() * (maxW - minW);
@@ -30,8 +30,12 @@ export function initHeroGallery(vh: number, isMobile: boolean) {
     }
 
     let curX = 0;
-    const positions = photoData.map(p => { const r = { ...p, x: curX }; curX += p.w + colGap; return r; });
-    const setW = curX;
+    const positions = photoData.map(p => { 
+        const r = { ...p, x: curX }; 
+        curX += p.w + colGap; 
+        return r; 
+    });
+    const totalW = curX;
 
     const gallery = document.createElement('div');
     gallery.style.cssText = 'position:absolute;inset:0;overflow:hidden;z-index:2;pointer-events:none;';
@@ -51,17 +55,24 @@ export function initHeroGallery(vh: number, isMobile: boolean) {
         gallery.appendChild(el);
         photoEls.push(el);
 
-        const initX = heroW + p.x;
-        gsap.set(el, { x: initX });
+        // Start at calculated X
+        const startX = p.x;
+        gsap.set(el, { x: startX });
 
-        // Seamless wrap via modifier: (delta % -setW) keeps x in [initX-setW, initX)
+        // Move by totalW to the left, repeating infinitely
         const tl = gsap.to(el, {
-            x: initX - setW,
-            duration: setW / 70,
+            x: "-=" + totalW,
+            duration: totalW / 50,
             ease: 'none',
             repeat: -1,
             modifiers: {
-                x: (x: string) => ((parseFloat(x) - initX) % -setW + initX) + 'px',
+                x: (x: string) => {
+                    const currentX = parseFloat(x);
+                    // Wrapping logic: ensure the element wraps back to the right once it's fully off-screen to the left
+                    // Range: [-p.w, totalW - p.w]
+                    const wrappedX = ((currentX + p.w) % totalW + totalW) % totalW - p.w;
+                    return wrappedX + "px";
+                }
             },
         });
 

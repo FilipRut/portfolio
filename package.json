@@ -12,9 +12,19 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
     "@tailwindcss/vite": "^4.2.1",
+    "@types/three": "^0.183.1",
     "astro": "^6.0.4",
     "gsap": "^3.14.2",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
+    "draco3dgltf": "^1.5.7",
+    "playwright": "^1.58.2"
   }
 }

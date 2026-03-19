@@ -17,12 +17,11 @@
 
         <!-- Image + Description group -->
         <div class="flex-1 flex items-center" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem); padding-left: clamp(0rem, 2vw, 5rem);">
-            <img
-                src="https://placehold.co/247x159/e5e5e5/737373?text=Keychains"
-                alt="Design artifacts"
-                class="intro-el object-cover shrink-0"
-                style="width: clamp(6rem, 4rem + 6vw, 15rem); height: clamp(4rem, 3rem + 4vw, 10rem);"
-            />
+            <div
+                id="keychain-container"
+                class="intro-el shrink-0"
+                style="width: clamp(6rem, 4rem + 6vw, 15rem); height: clamp(4rem, 3rem + 4vw, 10rem); pointer-events: none;"
+            ></div>
             <p class="intro-el text-orange-950 font-normal leading-snug" style="font-size: clamp(0.875rem, 0.7rem + 0.8vw, 1.35rem);">
                 An experienced Lead UX/UI designer and Webflow developer, delivering high-quality designs and websites.
             </p>
@@ -32,8 +31,8 @@
 
 <style>
     #intro {
-        min-height: 100vh;
-        padding: clamp(5rem, 4rem + 2vw, 7rem) clamp(1.5rem, 1rem + 3vw, 4rem) clamp(2rem, 1.5rem + 2vw, 4rem);
+        min-height: 140vh;
+        padding: clamp(1.5rem, 1rem + 3vw, 4rem);
     }
     @media (max-width: 767px) {
         #intro {

@@ -14,18 +14,19 @@ import PixelBuddy from './PixelBuddy.astro';
 
     <div class="prompter-column">
         <div class="prompter-row">
-            <!-- Dropdown toggle -->
-            <button id="dropdown-btn" class="prompter-dropdown" aria-label="Show suggestions">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
-                    <path d="M6 9l6 6 6-6"></path>
-                </svg>
-            </button>
-
             <div class="glass-wrapper">
                 <div class="glass-container">
                     <div class="prompter-textarea-wrap">
-                        <textarea id="ai-prompt" class="prompter-textarea" placeholder="Ask AI about me..."></textarea>
+                        <textarea id="ai-prompt" class="prompter-textarea" placeholder=""></textarea>
                         <div id="matrix-cursor" class="matrix-cursor"></div>
+
+                        <!-- Custom placeholder with sliding track -->
+                        <div class="placeholder-overlay">
+                            <div id="placeholder-track" class="placeholder-track">
+                                <span id="placeholder-text" class="placeholder-text"></span>
+                                <span id="placeholder-cursor" class="placeholder-cursor"></span>
+                            </div>
+                        </div>
 
                         <!-- Response overlay (top) -->
                         <div class="glass-overlay-top">
@@ -45,11 +46,16 @@ import PixelBuddy from './PixelBuddy.astro';
                             <div class="chat-spinner-dot"></div>
                         </div>
 
-                        <!-- Send button -->
+                        <!-- Send button + bubbles -->
                         <div class="glass-overlay-bottom">
-                            <div class="flex-1"></div>
+                            <div class="prompt-bubbles">
+                                <button class="prompt-bubble" data-prompt="Your projects?">Projects?</button>
+                                <button class="prompt-bubble" data-prompt="What tools do you use?">Tools?</button>
+                                <button class="prompt-bubble" data-prompt="What does your design process look like?">Process?</button>
+                                <button class="prompt-bubble" data-prompt="Are you open to freelance work?">Hire?</button>
+                            </div>
                             <button id="generate-btn" class="prompter-send" aria-label="Send">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; transform: translate(-1px, 0px);">
                                     <path d="M22 2L11 13"></path>
                                     <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
                                 </svg>
@@ -59,13 +65,6 @@ import PixelBuddy from './PixelBuddy.astro';
                 </div>
                 <PixelBuddy />
             </div>
-        </div>
-
-        <!-- Suggestion bubbles -->
-        <div class="prompt-bubbles">
-            <button class="prompt-bubble" data-prompt="What projects have you worked on?">What projects have you worked on?</button>
-            <button class="prompt-bubble" data-prompt="What does your design process look like?">What does your design process look like?</button>
-            <button class="prompt-bubble" data-prompt="What tools do you use?">What tools do you use?</button>
         </div>
     </div>
 </div>
@@ -105,53 +104,6 @@ import PixelBuddy from './PixelBuddy.astro';
         align-items: center;
         width: 100%;
         gap: clamp(0.5rem, 0.3rem + 0.3vw, 0.75rem);
-    }
-
-    .prompter-dropdown {
-        position: absolute;
-        left: -56px;
-        top: 0;
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        border-radius: 50%;
-        border: 0.75px solid transparent;
-        background: rgba(255, 255, 255, 0.08);
-        color: #fff;
-        cursor: pointer;
-        display: grid;
-        place-items: center;
-        padding: 0;
-        line-height: 0;
-        transition: none;
-        box-shadow:
-            0 0 0 0.75px rgba(255, 255, 255, 0.08),
-            0 8px 20px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(12px) saturate(120%);
-        -webkit-backdrop-filter: blur(12px) saturate(120%);
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .prompter-dropdown.is-visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateX(0);
-    }
-
-    .prompter-dropdown:hover {
-        background: rgba(255, 255, 255, 0.14);
-        box-shadow:
-            0 0 0 0.75px rgba(255, 255, 255, 0.15),
-            0 10px 24px rgba(0, 0, 0, 0.18);
-    }
-
-    .prompter-dropdown.is-open svg {
-        transform: rotate(180deg);
-    }
-
-    .prompter-dropdown svg {
-        transition: transform 0.3s ease;
     }
 
     @media (min-width: 2000px) {
@@ -212,7 +164,7 @@ import PixelBuddy from './PixelBuddy.astro';
         font-family: 'Inter Tight', sans-serif;
         font-size: clamp(0.9375rem, 0.85rem + 0.25vw, 1.1rem);
         padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
-        padding-bottom: clamp(3.5rem, 3rem + 1vw, 5rem);
+        padding-bottom: clamp(4.5rem, 3.5rem + 1.5vw, 6rem);
         background: transparent;
         border: none;
         color: rgba(255, 255, 255, 0.9);
@@ -226,11 +178,49 @@ import PixelBuddy from './PixelBuddy.astro';
 
     .matrix-cursor {
         position: absolute;
-        width: 2px;
-        background: rgba(255, 255, 255, 0.55);
+        width: 0.55em;
+        background: rgba(0, 230, 64, 0.75);
+        box-shadow: 0 0 6px rgba(0, 230, 64, 0.4), 0 0 14px rgba(0, 230, 64, 0.15);
         pointer-events: none;
         z-index: 5;
         display: none;
+        border-radius: 1px;
+        animation: matrix-blink 0.9s step-start infinite;
+    }
+
+    .placeholder-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .placeholder-track {
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        height: auto;
+        transition: transform 0.12s ease-out;
+    }
+
+    .placeholder-text {
+        font-family: 'Inter Tight', sans-serif;
+        color: rgba(255, 255, 255, 0.35);
+        line-height: 1.6;
+    }
+
+    .placeholder-cursor {
+        display: none;
+        width: 0.55em;
+        height: 0.85em;
+        margin-left: 0.3em;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 1px;
+        flex-shrink: 0;
         animation: matrix-blink 0.9s step-start infinite;
     }
 
@@ -242,7 +232,12 @@ import PixelBuddy from './PixelBuddy.astro';
     /* Light mode overrides */
     .prompter-fixed.on-light .prompter-textarea { color: rgba(0, 0, 0, 0.85); }
     .prompter-fixed.on-light .prompter-textarea::placeholder { color: rgba(0, 0, 0, 0.45); }
-    .prompter-fixed.on-light .matrix-cursor { background: rgba(0, 0, 0, 0.45); }
+    .prompter-fixed.on-light .matrix-cursor {
+        background: rgba(0, 180, 50, 0.7);
+        box-shadow: 0 0 6px rgba(0, 180, 50, 0.3), 0 0 14px rgba(0, 180, 50, 0.1);
+    }
+    .prompter-fixed.on-light .placeholder-text { color: rgba(0, 0, 0, 0.35); }
+    .prompter-fixed.on-light .placeholder-cursor { background: rgba(0, 0, 0, 0.25); }
     .prompter-fixed.on-light .glass-container {
         border-color: rgba(0, 0, 0, 0.08);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -253,15 +248,6 @@ import PixelBuddy from './PixelBuddy.astro';
     }
     .prompter-fixed.on-light #ai-response-title { color: rgba(0, 0, 0, 0.9); }
     .prompter-fixed.on-light #ai-response-text { color: rgba(0, 0, 0, 0.55); }
-    .prompter-fixed.on-light .prompt-bubble {
-        background: rgba(0, 0, 0, 0.06);
-        color: rgba(0, 0, 0, 0.8);
-        box-shadow: 0 0 0 0.75px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
-    }
-    .prompter-fixed.on-light .prompter-dropdown {
-        background: rgba(0, 0, 0, 0.06);
-        color: rgba(0, 0, 0, 0.7);
-    }
 
     .glass-overlay-top {
         position: absolute;
@@ -279,15 +265,58 @@ import PixelBuddy from './PixelBuddy.astro';
         left: 0;
         right: 0;
         display: flex;
-        align-items: flex-end;
-        gap: clamp(0.5rem, 0.3rem + 0.3vw, 0.75rem);
+        align-items: center; /* Centered instead of flex-end */
+        justify-content: flex-end;
+        gap: clamp(0.6rem, 0.5rem + 0.5vw, 1rem); /* Increased gap */
         padding: clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem);
         z-index: 2;
+    }
+
+    .prompt-bubbles {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center; /* Centered instead of flex-end */
+        gap: 12px; /* Increased gap between bubbles */
+    }
+
+    .prompt-bubble {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.75rem, 0.65rem + 0.25vw, 0.95rem);
+        padding: clamp(0.35rem, 0.3rem + 0.15vw, 0.55rem) clamp(0.75rem, 0.6rem + 0.4vw, 1.1rem);
+        height: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(12px);
+        border: 0.75px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .prompt-bubble:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+    }
+
+    .prompter-fixed.on-light .prompt-bubble {
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.6);
+        border-color: rgba(0, 0, 0, 0.06);
+    }
+
+    .prompter-fixed.on-light .prompt-bubble:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: rgba(0, 0, 0, 0.85);
     }
 
     .prompter-send {
         width: 48px;
         height: 48px;
+        flex-shrink: 0;
         border-radius: 50%;
         background: rgba(229, 62, 62, 0.85);
         color: #fff;
@@ -298,38 +327,8 @@ import PixelBuddy from './PixelBuddy.astro';
         backdrop-filter: blur(12px);
     }
 
-    .prompt-bubbles {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        width: 100%;
-        gap: clamp(0.4rem, 0.3rem + 0.25vw, 0.6rem);
-    }
-
-    .prompt-bubble {
-        font-family: 'Inter Tight', sans-serif;
-        font-size: clamp(0.75rem, 0.65rem + 0.2vw, 0.9rem);
-        padding: clamp(0.3rem, 0.25rem + 0.15vw, 0.45rem) clamp(0.7rem, 0.5rem + 0.35vw, 1rem);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.08);
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        backdrop-filter: blur(12px);
-    }
-
     @media (max-width: 767px) {
         .prompter-fixed { align-items: flex-end; padding-bottom: 1rem; }
-        .prompter-dropdown { display: none !important; }
-        .prompt-bubbles {
-            position: absolute;
-            bottom: 3.5rem;
-            left: 0.75rem;
-            right: 0.75rem;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
         .prompter-textarea { color: rgba(0, 0, 0, 0.85); }
         .glass-container { background: rgba(255, 255, 255, 0.9); }
     }

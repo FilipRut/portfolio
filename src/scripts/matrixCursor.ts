@@ -21,24 +21,27 @@ export function initMatrixCursor(promptInput: HTMLTextAreaElement) {
         const style = window.getComputedStyle(ta);
         measureCtx!.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
         const xOffset = measureCtx!.measureText(lineText).width;
+        const spaceWidth = measureCtx!.measureText('\u00A0').width;
+        const charWidth = measureCtx!.measureText('M').width;
         const lineHeight = parseFloat(style.fontSize) * 1.6;
         const padTop = parseFloat(style.paddingTop);
         const padLeft = parseFloat(style.paddingLeft);
 
+        matrixCursorEl!.style.width = Math.round(charWidth * 0.55) + 'px';
         matrixCursorEl!.style.height = Math.round(lineHeight * 0.85) + 'px';
-        matrixCursorEl!.style.left = Math.round(padLeft + xOffset) + 'px';
+        matrixCursorEl!.style.left = Math.round(padLeft + xOffset + spaceWidth) + 'px';
         matrixCursorEl!.style.top = Math.round(padTop + linesBefore * lineHeight + lineHeight * 0.075 - ta.scrollTop) + 'px';
         matrixCursorEl!.style.display = 'block';
     }
 
-    promptInput.addEventListener('focus', () => { 
-        matrixCursorEl!.style.display = 'block'; 
-        updateMatrixCursor(); 
+    promptInput.addEventListener('focus', () => {
+        matrixCursorEl!.style.display = 'block';
+        updateMatrixCursor();
     });
-    promptInput.addEventListener('blur', () => { 
-        matrixCursorEl!.style.display = 'none'; 
+    promptInput.addEventListener('blur', () => {
+        matrixCursorEl!.style.display = 'none';
     });
-    
+
     (['input', 'keyup', 'keydown', 'click', 'mouseup'] as const).forEach(evt => {
         promptInput.addEventListener(evt, updateMatrixCursor);
     });

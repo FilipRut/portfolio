@@ -10,6 +10,11 @@
         </button>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input-area">
+            <div class="prompt-bubbles">
+                <button class="prompt-bubble" data-prompt="What projects have you worked on?">What projects have you worked on?</button>
+                <button class="prompt-bubble" data-prompt="What does your design process look like?">What does your design process look like?</button>
+                <button class="prompt-bubble" data-prompt="What tools do you use?">What tools do you use?</button>
+            </div>
             <div class="chat-input-wrap">
                 <input id="chat-input" type="text" class="chat-input" placeholder="Type a message..." />
                 <button id="chat-send" class="chat-send-btn" aria-label="Send">
@@ -74,6 +79,29 @@
     .chat-input-area {
         padding: 0.75rem 1rem 1rem;
         border-top: 1px solid rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .prompt-bubbles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+    .prompt-bubble {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.65);
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+    }
+    .prompt-bubble:hover {
+        background: rgba(0, 0, 0, 0.08);
+        color: rgba(0, 0, 0, 0.85);
     }
     .chat-input-wrap {
         display: flex;

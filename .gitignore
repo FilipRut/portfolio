@@ -22,3 +22,12 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# debug screenshots
+*.png
+
+# playwright cli logs
+.playwright-cli/
+
+# temp scripts
+pw-test.mjs

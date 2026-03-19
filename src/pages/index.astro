@@ -7,6 +7,9 @@ import Intro from '../components/Intro.astro';
 ---
 
 <BaseLayout>
+	<!-- Global Three.js Container for transitions -->
+	<div id="global-three-container"></div>
+
 	<!-- Vignette spotlight — pojawia się gdy kompozer jest na środku -->
 	<div id="scene-vignette"></div>
 
@@ -16,6 +19,16 @@ import Intro from '../components/Intro.astro';
 	<Intro />
 
 	<style is:global>
+		#global-three-container {
+			position: fixed;
+			inset: 0;
+			pointer-events: none;
+			z-index: 20; /* High enough to be above backgrounds */
+		}
+		#global-three-container canvas {
+			width: 100%;
+			height: 100%;
+		}
 		#scene-vignette {
 			position: fixed;
 			inset: 0;
