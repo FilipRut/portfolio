@@ -5,28 +5,32 @@ import gsap from 'gsap';
 import 'gsap/ScrollTrigger';
 
 /*
- * Keychain — Carabiner + Ring, Rapier3D with compound sphere colliders.
+ * Keychain chain: Anchor → Carabiner → BigRing → MediumRing → SmallRing
  *
- * WHY compound spheres instead of Trimesh:
- *   Rapier (like cannon-es) does NOT support Trimesh-vs-Trimesh on dynamic bodies.
- *   Compound spheres give reliable sphere-vs-sphere collision.
- *
- * WHY Rapier over cannon-es:
- *   - CCD (continuous collision detection) prevents tunneling
- *   - Better PGS solver = more stable contacts
- *   - Substep support for smoother simulation
+ * Each link connected by spherical joint (top of child → bottom of parent).
+ * Collision disabled between chain elements (joint handles topology).
+ * All rings use CircleBig.glb at different scales.
  */
 
 const PHYS = {
     GRAVITY:        -9.82,
-    SUBSTEPS:        4,
     LINEAR_DAMPING:  2.0,
-    ANGULAR_DAMPING: 8.0,    // very high — kills spinning fast
+    ANGULAR_DAMPING: 8.0,
     MOUSE_FORCE:     0.3,
     INERTIA_FORCE:   0.5,
-    FRICTION:        0.0,    // zero friction — no tangential forces from collision
+    FRICTION:        0.0,
     RESTITUTION:     0.0,
 };
+
+// Ring definitions: name, physics radius, tube radius, visual scale, sphere count
+// Rings alternate orientation: YZ → XZ → YZ (like a real chain)
+// pivotTop < R → ring overlaps INTO parent (interlocking chain look)
+// pivotBot < R → child overlaps into this ring
+const RINGS = [
+    { name: 'big',    R: 0.27, tubeR: 0.03,  scale: 1.0,  N: 20, pivotTop: 0.20, pivotBot: 0.20, plane: 'yz' as const },
+    { name: 'medium', R: 0.18, tubeR: 0.025, scale: 0.67, N: 16, pivotTop: 0.18, pivotBot: 0.12, plane: 'xy' as const },
+    { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12, pivotTop: 0.07, pivotBot: 0.10, plane: 'yz' as const },
+];
 
 export function initThreeScene() {
     const globalContainer = document.getElementById('global-three-container');
@@ -54,125 +58,173 @@ export function initThreeScene() {
     const basePath = '/assets/models/parts-clean/';
 
     let world: RAPIER.World;
-    let carabinerRigidBody: RAPIER.RigidBody;
-    let ringRigidBody: RAPIER.RigidBody;
+    let carabinerBody: RAPIER.RigidBody;
     let carabinerGroup: THREE.Group;
-    let ringGroup: THREE.Group;
+
+    // Chain links (rings + charm)
+    const chainBodies: RAPIER.RigidBody[] = [];
+    const chainGroups: THREE.Group[] = [];
+    let charmBody: RAPIER.RigidBody;
+    let charmGroup: THREE.Group;
+
     let modelLoaded = false;
     let prevMainRotY = -Math.PI / 4;
     let mainRotVelocity = 0;
 
-    // ── Compound shape builders ──
-
-    // Carabiner: ellipse of spheres in XY plane
-    // Bounding box: 0.77w × 1.69h → semi-axes 0.35 (X), 0.80 (Y)
-    /*
-     * Collision groups (Rapier bitmask):
-     * - Group 1 (0x0001): carabiner
-     * - Group 2 (0x0002): ring
-     * - Carabiner collides with group 2+ (NOT itself, NOT ring → 0xFFFC filter)
-     * - Ring collides with group 1+ (NOT itself, NOT carabiner → 0xFFFC filter)
-     * - Actually: just disable carabiner↔ring collision entirely.
-     *   membership=group, filter=what it collides WITH
-     */
-    // Carabiner: member of group 1, collides with groups 4+ (NOT ring group 2)
-    const CARABINER_GROUP = (0x0001 << 16) | 0xFFFC;
-    // Ring: member of group 2, collides with groups 4+ (NOT carabiner group 1)
-    const RING_GROUP      = (0x0002 << 16) | 0xFFFC;
+    // Collision groups — all chain elements in same group, don't collide with each other
+    const CHAIN_GROUP = (0x0001 << 16) | 0xFFFE; // member=1, filter=NOT group 1
 
     function addCarabinerColliders(body: RAPIER.RigidBody) {
-        const N = 28;
-        const semiA = 0.35, semiB = 0.80;
-        const tubeR = 0.055;
-        const centerY = 0.05;
-
+        const N = 28, semiA = 0.35, semiB = 0.80, tubeR = 0.055, centerY = 0.05;
         for (let i = 0; i < N; i++) {
             const a = (i / N) * Math.PI * 2;
-            const desc = RAPIER.ColliderDesc.ball(tubeR)
-                .setTranslation(Math.cos(a) * semiA, Math.sin(a) * semiB + centerY, 0)
-                .setCollisionGroups(CARABINER_GROUP)
-                .setDensity(2.0);
-            world.createCollider(desc, body);
+            world.createCollider(
+                RAPIER.ColliderDesc.ball(tubeR)
+                    .setTranslation(Math.cos(a) * semiA, Math.sin(a) * semiB + centerY, 0)
+                    .setCollisionGroups(CHAIN_GROUP)
+                    .setDensity(2.0),
+                body,
+            );
         }
     }
 
-    function addRingColliders(body: RAPIER.RigidBody) {
-        const N = 20;
-        const R = 0.27;
-        const tubeR = 0.03;
-
+    function addRingColliders(body: RAPIER.RigidBody, R: number, tubeR: number, N: number, plane: 'yz' | 'xy') {
         for (let i = 0; i < N; i++) {
             const a = (i / N) * Math.PI * 2;
-            const desc = RAPIER.ColliderDesc.ball(tubeR)
-                .setTranslation(0, Math.cos(a) * R, Math.sin(a) * R)
-                .setCollisionGroups(RING_GROUP)
-                .setDensity(1.5);
-            world.createCollider(desc, body);
+            // YZ plane: ring in Y-Z, flat in X (perpendicular to camera)
+            // XY plane: ring in X-Y, flat in Z (facing camera)
+            const x = plane === 'xy' ? Math.cos(a) * R : 0;
+            const y = Math.sin(a) * R; // both planes extend in Y
+            const z = plane === 'yz' ? Math.cos(a) * R : 0;
+            world.createCollider(
+                RAPIER.ColliderDesc.ball(tubeR)
+                    .setTranslation(x, y, z)
+                    .setCollisionGroups(CHAIN_GROUP)
+                    .setDensity(1.5),
+                body,
+            );
         }
     }
 
-    // ── Init Rapier ──
     RAPIER.init().then(() => {
         world = new RAPIER.World({ x: 0, y: PHYS.GRAVITY, z: 0 });
 
         const ANCHOR_Y = 0.89;
+        const CARABINER_BOT_Y = -0.75;
 
         // Fixed anchor
         const anchorBody = world.createRigidBody(
             RAPIER.RigidBodyDesc.fixed().setTranslation(0, ANCHOR_Y, 0)
         );
 
-        // ── Carabiner body ──
-        carabinerRigidBody = world.createRigidBody(
+        // ── Carabiner ──
+        carabinerBody = world.createRigidBody(
             RAPIER.RigidBodyDesc.dynamic()
                 .setTranslation(0, 0, 0)
                 .setLinearDamping(PHYS.LINEAR_DAMPING)
                 .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                .setCcdEnabled(true)  // prevent tunneling
+                .setCcdEnabled(true)
         );
-        addCarabinerColliders(carabinerRigidBody);
+        addCarabinerColliders(carabinerBody);
 
-        // Spherical joint: anchor → carabiner top
+        // Anchor → Carabiner top
         world.createImpulseJoint(
             RAPIER.JointData.spherical(
                 { x: 0, y: 0, z: 0 },
                 { x: 0, y: ANCHOR_Y, z: 0 },
             ),
-            anchorBody, carabinerRigidBody, true,
+            anchorBody, carabinerBody, true,
         );
 
-        // ── Ring body ──
-        // Carabiner bottom at Y=-0.75. Ring hangs from that point.
-        const CARABINER_BOT_Y = -0.75;
-        ringRigidBody = world.createRigidBody(
-            RAPIER.RigidBodyDesc.dynamic()
-                .setTranslation(0, CARABINER_BOT_Y - 0.22, 0)  // center = bottom - pivot offset
-                .setLinearDamping(PHYS.LINEAR_DAMPING)
-                .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                .setCcdEnabled(true)
-        );
-        addRingColliders(ringRigidBody);
+        // ── Create ring chain ──
+        // Each ring connects: parent bottom → this ring top
+        let parentBody: RAPIER.RigidBody = carabinerBody;
+        let parentBottomLocal = { x: 0, y: CARABINER_BOT_Y, z: 0 }; // carabiner bottom
 
-        // Spherical joint: carabiner bottom → ring TOP
-        // Pivot at ring's top edge (Y=+0.27 in ring local space),
-        // so the ring hangs FROM its top and visually touches the carabiner bottom.
-        world.createImpulseJoint(
-            RAPIER.JointData.spherical(
-                { x: 0, y: CARABINER_BOT_Y, z: 0 },  // carabiner's bottom
-                { x: 0, y: 0.22, z: 0 },               // above ring center, below top — ring sits higher
-            ),
-            carabinerRigidBody, ringRigidBody, true,
-        );
+        RINGS.forEach((ring) => {
+            // Body center positioned so top pivot aligns with parent's bottom pivot
+            // Joint will be: parentBody@parentBottomLocal → ringBody@(0, pivotTop, 0)
+            // So ringBody center Y = parentBottomWorldY - pivotTop
+            const parentPos = parentBody.translation();
+            const jointWorldY = parentPos.y + parentBottomLocal.y;
+            const centerY = jointWorldY - ring.pivotTop;
 
-        // ── Load visual meshes ──
+            const body = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(0, centerY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            addRingColliders(body, ring.R, ring.tubeR, ring.N, ring.plane);
+
+            // Joint: parent bottom → ring top
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    parentBottomLocal,
+                    { x: 0, y: ring.pivotTop, z: 0 },
+                ),
+                parentBody, body, true,
+            );
+
+            chainBodies.push(body);
+
+            // Next ring connects to this ring's bottom
+            parentBody = body;
+            parentBottomLocal = { x: 0, y: -ring.pivotBot, z: 0 };
+        });
+
+        // ── Orange charm body ──
+        // Orange mesh: peg at bottom Y=-0.924, top face Y=0.012, center Y=-0.456
+        // We flip it (bake rotation) so peg is at top: Y=+0.924 from flipped center +0.456
+        // Peg tip is 0.468 above body center (0.924 - 0.456)
+        // Connect peg to last ring's bottom pivot
+        const CHARM_PEG_OFFSET = 0.46; // close to peg tip (0.468) — minimal gap
+        const lastRing = RINGS[RINGS.length - 1];
+        {
+            const lastRingBody = chainBodies[chainBodies.length - 1];
+            const lastRingPos = lastRingBody.translation();
+            const jointWorldY = lastRingPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - CHARM_PEG_OFFSET;
+
+            charmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(0, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+
+            // Box collider approximating the cube (0.88 x 0.94 x 0.39)
+            // After flip, same dimensions — use half-extents
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.44, 0.47, 0.19)
+                    .setCollisionGroups(CHAIN_GROUP)
+                    .setDensity(1.0),
+                charmBody,
+            );
+
+            // Joint: last ring bottom → charm peg (top of flipped charm)
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },    // last ring's bottom
+                    { x: 0, y: CHARM_PEG_OFFSET, z: 0 },       // charm's peg (top)
+                ),
+                lastRingBody, charmBody, true,
+            );
+        }
+
+        // ── Load visuals ──
+        const TOTAL = 1 + RINGS.length + 1; // carabiner + rings + charm
         let loadCount = 0;
         function onLoaded() {
-            if (++loadCount === 2) {
+            if (++loadCount === TOTAL) {
                 modelLoaded = true;
-                console.log('[keychain] Rapier ready — compound sphere collision + CCD');
+                console.log(`[keychain] ${TOTAL} parts loaded — chain ready`);
             }
         }
 
+        // Carabiner visual
         loader.load(basePath + 'Carabiner.glb', (gltf) => {
             carabinerGroup = new THREE.Group();
             carabinerGroup.add(gltf.scene);
@@ -180,17 +232,43 @@ export function initThreeScene() {
             onLoaded();
         });
 
-        loader.load(basePath + 'CircleBig.glb', (gltf) => {
-            ringGroup = new THREE.Group();
+        // Orange charm visual — peg is ALREADY at top in original mesh (Y≈0.012)
+        // No flip needed! Original orientation: peg up, cube body below.
+        loader.load(basePath + 'Orange.glb', (gltf) => {
+            charmGroup = new THREE.Group();
             const mesh = gltf.scene;
-            // Original: ring in XY plane, center at Y=0.41
-            // Rotate 90° around Y → ring in YZ plane (matches physics colliders)
-            mesh.rotation.y = Math.PI / 2;
-            // Center is still at Y=0.41 after Y rotation, shift to origin
-            mesh.position.y = -0.41;
-            ringGroup.add(mesh);
-            mainGroup.add(ringGroup);
+
+            // Original center at Y=-0.456, shift up so group origin = body center
+            mesh.position.y = 0.456;
+            // Nudge so peg hole aligns with ring center
+            mesh.position.x = -0.025;
+
+            charmGroup.add(mesh);
+            mainGroup.add(charmGroup);
             onLoaded();
+        });
+
+        // Ring visuals — CircleBig.glb at different scales, alternating orientation
+        RINGS.forEach((ring, i) => {
+            loader.load(basePath + 'CircleBig.glb', (gltf) => {
+                const group = new THREE.Group();
+                const mesh = gltf.scene;
+
+                // Original ring is in XY plane, center at Y=0.41
+                // YZ plane: rotate 90° around Y → perpendicular to camera
+                // XY plane: no rotation needed → faces camera
+                if (ring.plane === 'yz') {
+                    mesh.rotation.y = Math.PI / 2;
+                }
+                // Center offset always in Y (both planes are vertical)
+                mesh.position.y = -0.41 * ring.scale;
+                mesh.scale.setScalar(ring.scale);
+
+                group.add(mesh);
+                mainGroup.add(group);
+                chainGroups[i] = group;
+                onLoaded();
+            });
         });
     });
 
@@ -244,29 +322,36 @@ export function initThreeScene() {
         mainRotVelocity = mainGroup.rotation.y - prevMainRotY;
         prevMainRotY = mainGroup.rotation.y;
 
-        // Apply impulse (not force) — avoids Rapier WASM aliasing issue
-        if (ringRigidBody) {
+        // Impulse on charm (bottom of chain — cascades up through joints)
+        if (charmBody) {
             const ix = (mouseX * PHYS.MOUSE_FORCE - mainRotVelocity * PHYS.INERTIA_FORCE) * (1/60);
             const iz = mouseY * PHYS.MOUSE_FORCE * (1/60);
-            ringRigidBody.applyImpulse({ x: ix, y: 0, z: iz }, true);
+            charmBody.applyImpulse({ x: ix, y: 0, z: iz }, true);
         }
 
-        // Single step with small timestep (Rapier handles internal substeps)
         world.timestep = 1 / 60;
         world.step();
 
-        // Sync Rapier → Three.js
-        if (carabinerRigidBody && carabinerGroup) {
-            const p = carabinerRigidBody.translation();
-            const r = carabinerRigidBody.rotation();
+        // Sync all bodies → Three.js
+        if (carabinerBody && carabinerGroup) {
+            const p = carabinerBody.translation();
+            const r = carabinerBody.rotation();
             carabinerGroup.position.set(p.x, p.y, p.z);
             carabinerGroup.quaternion.set(r.x, r.y, r.z, r.w);
         }
-        if (ringRigidBody && ringGroup) {
-            const p = ringRigidBody.translation();
-            const r = ringRigidBody.rotation();
-            ringGroup.position.set(p.x, p.y, p.z);
-            ringGroup.quaternion.set(r.x, r.y, r.z, r.w);
+        chainBodies.forEach((body, i) => {
+            const group = chainGroups[i];
+            if (!group) return;
+            const p = body.translation();
+            const r = body.rotation();
+            group.position.set(p.x, p.y, p.z);
+            group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (charmBody && charmGroup) {
+            const p = charmBody.translation();
+            charmGroup.position.set(p.x, p.y, p.z);
+            // Counter-rotate mainGroup so charm always faces camera
+            charmGroup.rotation.y = -mainGroup.rotation.y;
         }
 
         const rect = placeholder!.getBoundingClientRect();
