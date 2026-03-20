@@ -1,43 +1,275 @@
 ---
+interface Project {
+    id: string;
+    title: string;
+    client: string;
+    company: string;
+    year: number;
+    heroImage: string;
+}
+interface Props {
+    projects: Project[];
+}
+const { projects } = Astro.props;
 ---
 <section id="intro" class="w-full bg-white">
-    <div class="flex flex-col lg:flex-row items-start lg:items-center" style="padding: clamp(1rem, 0.5rem + 1vw, 1.5rem) 0; gap: clamp(1.5rem, 1rem + 2vw, 3rem);">
-        <!-- Photo + Heading group -->
-        <div class="flex items-center shrink-0" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);">
-            <img
-                src="https://placehold.co/111x160/e5e5e5/737373?text=Photo"
-                alt="Filip Rut"
-                class="intro-el object-cover rounded"
-                style="width: clamp(4rem, 3rem + 3vw, 7rem); height: clamp(5.5rem, 4rem + 4vw, 10rem);"
-            />
-            <h1 class="intro-el text-stone-950 font-normal leading-tight" style="font-size: clamp(1.5rem, 1rem + 2.5vw, 3.5rem); max-width: 32rem;">
-                Leading above the corporate chaos
-            </h1>
-        </div>
+    <div class="intro-inner mx-auto" style="max-width: 1440px;">
 
-        <!-- Image + Description group -->
-        <div class="flex-1 flex items-center" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem); padding-left: clamp(0rem, 2vw, 5rem);">
+        <!-- Row 1: Photo + Heading + Keychain + Description -->
+        <div class="intro-row">
+            <div class="intro-left flex items-center" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);">
+                <img
+                    src="https://placehold.co/111x160/e5e5e5/737373?text=Photo"
+                    alt="Filip Rut"
+                    class="intro-el object-cover rounded shrink-0"
+                    style="width: clamp(4rem, 3rem + 3vw, 7rem); height: clamp(5.5rem, 4rem + 4vw, 10rem);"
+                />
+                <h1 class="intro-el text-stone-950 font-normal leading-tight" style="font-size: clamp(1.5rem, 1rem + 2.5vw, 3.5rem);">
+                    Leading above the corporate chaos
+                </h1>
+            </div>
+
             <div
                 id="keychain-container"
-                class="intro-el shrink-0"
-                style="width: clamp(6rem, 4rem + 6vw, 15rem); height: clamp(4rem, 3rem + 4vw, 10rem); pointer-events: none;"
+                class="intro-el intro-keychain"
             ></div>
-            <p class="intro-el text-orange-950 font-normal leading-snug" style="font-size: clamp(0.875rem, 0.7rem + 0.8vw, 1.35rem);">
+
+            <p class="intro-el intro-right text-orange-950 font-normal leading-snug" style="font-size: clamp(0.875rem, 0.7rem + 0.8vw, 1.35rem);">
                 An experienced Lead AI UX/UI designer and Webflow developer, delivering high-quality designs and websites.
             </p>
         </div>
+
+        <!-- Row 2: Featured projects -->
+        <div class="intro-projects">
+            {projects.map((p) => (
+                <a href={`/projects/${p.id}`} class="project-tile intro-el" data-project={p.id} data-image={p.heroImage}>
+                    <span class="tile-client">{p.client || p.company}</span>
+                    <span class="tile-title">{p.title}</span>
+                    <span class="tile-year">{p.year}</span>
+                </a>
+            ))}
+        </div>
+
+        <!-- Floating thumbnail that follows cursor on tile hover -->
+        <div id="tile-preview" class="tile-preview">
+            <img id="tile-preview-img" class="tile-preview-img" src="" alt="" />
+        </div>
+
+        <!-- Keychain 3D anchor — below projects, 3D slides here after detach -->
+        <div id="keychain-anchor" class="intro-keychain-anchor"></div>
+
     </div>
 </section>
 
 <style>
     #intro {
-        min-height: 140vh;
+        min-height: 300vh;
         padding: clamp(1.5rem, 1rem + 3vw, 4rem);
     }
+
+    .intro-inner {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Row 1 */
+    .intro-row {
+        display: flex;
+        align-items: center;
+        gap: clamp(3rem, 1.5rem + 6vw, 7.5rem);
+    }
+
+    .intro-left {
+        flex: 1 1 0%;
+        min-width: 0;
+    }
+
+    .intro-keychain {
+        flex: 0 0 auto;
+        width: clamp(3.5rem, 2.5rem + 3vw, 8rem);
+        height: clamp(4rem, 3rem + 4vw, 10rem);
+        pointer-events: none;
+    }
+
+    .intro-right {
+        flex: 1 1 0%;
+        min-width: 0;
+        max-width: 28rem;
+    }
+
+    /* Row 2: Projects */
+    .intro-projects {
+        position: relative;
+        z-index: 25;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.4rem, 0.25rem + 0.3vw, 0.6rem);
+        margin-top: clamp(2.5rem, 2rem + 2vw, 5rem);
+    }
+
+    .project-tile {
+        display: flex;
+        align-items: center;
+        gap: clamp(1rem, 0.75rem + 1vw, 2rem);
+        padding: clamp(1.7rem, 1.4rem + 1vw, 2.5rem) clamp(1rem, 0.75rem + 0.75vw, 1.75rem);
+        border-radius: clamp(0.6rem, 0.4rem + 0.4vw, 1rem);
+        text-decoration: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease, box-shadow 0.3s ease;
+
+        /* Liquid glass */
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(12px) saturate(130%);
+        -webkit-backdrop-filter: blur(12px) saturate(130%);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.04),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7),
+            inset 0 -0.5px 0 rgba(0, 0, 0, 0.02);
+    }
+
+    .project-tile .tile-client,
+    .project-tile .tile-title,
+    .project-tile .tile-year {
+        transition: color 0.3s ease;
+    }
+
+    /* Hover: dark tile */
+    .project-tile:hover {
+        background: #111;
+        border-color: #111;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .project-tile:hover .tile-client {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .project-tile:hover .tile-title {
+        color: #fff;
+    }
+
+    .project-tile:hover .tile-year {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .tile-client {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.75rem, 0.65rem + 0.25vw, 0.9rem);
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.4);
+        flex-shrink: 0;
+        min-width: clamp(5rem, 4rem + 4vw, 10rem);
+    }
+
+    .tile-title {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.9375rem, 0.8rem + 0.5vw, 1.2rem);
+        font-weight: 400;
+        color: #171717;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tile-year {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.75rem, 0.65rem + 0.2vw, 0.875rem);
+        font-weight: 400;
+        color: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+    }
+
+    /* Floating preview thumbnail */
+    .tile-preview {
+        position: fixed;
+        z-index: 30;
+        pointer-events: none;
+        width: clamp(12rem, 10rem + 6vw, 20rem);
+        aspect-ratio: 16 / 10;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        opacity: 0;
+        transform: scale(0.85) translateY(8px);
+        transition: opacity 0.25s ease, transform 0.3s ease;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .tile-preview.is-visible {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    .tile-preview-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* 3D anchor below projects */
+    .intro-keychain-anchor {
+        width: 100%;
+        height: clamp(10rem, 8rem + 6vw, 18rem);
+        pointer-events: none;
+    }
+
+    /* Tablet and below */
+    @media (max-width: 1024px) {
+        .intro-keychain {
+            display: none;
+        }
+        .intro-right {
+            max-width: 100%;
+        }
+        .tile-preview {
+            display: none;
+        }
+    }
+
     @media (max-width: 767px) {
         #intro {
             min-height: auto;
             padding: clamp(1.5rem, 1rem + 1vw, 2rem) clamp(1.5rem, 1rem + 3vw, 4rem) 6rem;
         }
+        .intro-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .tile-client {
+            min-width: auto;
+        }
     }
 </style>
+
+<script>
+    const preview = document.getElementById('tile-preview') as HTMLDivElement;
+    const previewImg = document.getElementById('tile-preview-img') as HTMLImageElement;
+    const tiles = document.querySelectorAll<HTMLAnchorElement>('.project-tile');
+
+    let currentImage = '';
+
+    tiles.forEach(tile => {
+        tile.addEventListener('mouseenter', () => {
+            const img = tile.dataset.image;
+            if (!img) return;
+            if (img !== currentImage) {
+                currentImage = img;
+                previewImg.src = img;
+            }
+            preview.classList.add('is-visible');
+        });
+
+        tile.addEventListener('mouseleave', () => {
+            preview.classList.remove('is-visible');
+        });
+
+        tile.addEventListener('mousemove', (e) => {
+            const x = e.clientX + 20;
+            const y = e.clientY - 60;
+            preview.style.left = x + 'px';
+            preview.style.top = y + 'px';
+        });
+    });
+</script>

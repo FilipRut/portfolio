@@ -1,0 +1,439 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map(project => ({
+    params: { id: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const d = project.data;
+const { Content } = await render(project);
+
+// Structured sections in display order
+const sections = [
+  { key: 'problem',    data: d.problem },
+  { key: 'users',      data: d.users },
+  { key: 'research',   data: d.research },
+  { key: 'strategy',   data: d.strategy },
+  { key: 'solution',   data: d.solution },
+] as const;
+
+const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d.tools.length || d.platform;
+---
+
+<BaseLayout>
+  <article class="project-page">
+    <!-- ── HERO ── -->
+    <header class="hero">
+      <a href="/projects" class="back-link">&larr; All projects</a>
+
+      {hasMetadata && (
+        <div class="meta-bar">
+          {d.client && <div class="meta-item"><span class="meta-label">Client</span><span class="meta-value">{d.client}</span></div>}
+          {d.company && <div class="meta-item"><span class="meta-label">Company</span><span class="meta-value meta-company">{d.companyLogo && <img src={d.companyLogo} alt={d.company} class="company-logo" />}{d.company}</span></div>}
+          {d.role && <div class="meta-item"><span class="meta-label">Role</span><span class="meta-value">{d.role}</span></div>}
+          {d.team && <div class="meta-item"><span class="meta-label">Team</span><span class="meta-value">{d.team}</span></div>}
+          {d.timeline && <div class="meta-item"><span class="meta-label">Timeline</span><span class="meta-value">{d.timeline}</span></div>}
+          {d.platform && <div class="meta-item"><span class="meta-label">Platform</span><span class="meta-value">{d.platform}</span></div>}
+          {d.tools.length > 0 && <div class="meta-item"><span class="meta-label">Tools</span><span class="meta-value">{d.tools.join(', ')}</span></div>}
+          {d.deliverables.length > 0 && <div class="meta-item"><span class="meta-label">Deliverables</span><span class="meta-value">{d.deliverables.join(', ')}</span></div>}
+        </div>
+      )}
+
+      <h1>{d.title}</h1>
+      {d.subtitle && <p class="subtitle">{d.subtitle}</p>}
+      <p class="lead">{d.description}</p>
+
+      <div class="tag-row">
+        {d.tags.map(tag => <span class="tag">{tag}</span>)}
+        {(d.link || d.behance || d.figma) && (
+          <div class="ext-links">
+            {d.link && <a href={d.link} target="_blank" rel="noopener noreferrer">Live site &rarr;</a>}
+            {d.behance && <a href={d.behance} target="_blank" rel="noopener noreferrer">Behance &rarr;</a>}
+            {d.figma && <a href={d.figma} target="_blank" rel="noopener noreferrer">Figma &rarr;</a>}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <!-- ── COVER ── -->
+    <div class="cover-wrap">
+      {d.coverVideo
+        ? <video src={d.coverVideo} autoplay loop muted playsinline />
+        : <img src={d.cover} alt={d.title} loading="eager" decoding="async" />
+      }
+    </div>
+
+    <!-- ── CASE STUDY SECTIONS ── -->
+    <div class="case-study">
+      {sections.map(({ data }) => data && (
+        <section class="cs-section">
+          {data.heading && <h2>{data.heading}</h2>}
+          <div class="cs-body" set:html={data.body.replace(/\n/g, '<br/>')} />
+          {data.image && (
+            <figure>
+              <img src={data.image} alt={data.imageAlt || ''} loading="lazy" decoding="async" />
+              {data.imageAlt && <figcaption>{data.imageAlt}</figcaption>}
+            </figure>
+          )}
+        </section>
+      ))}
+
+      <!-- ── RESULTS ── -->
+      {d.results && (
+        <section class="cs-section cs-results">
+          {d.results.heading && <h2>{d.results.heading}</h2>}
+          {d.results.body && <p class="results-body">{d.results.body}</p>}
+          {d.results.metrics.length > 0 && (
+            <div class="metrics-grid">
+              {d.results.metrics.map(m => (
+                <div class="metric">
+                  <span class="metric-value">{m.value}</span>
+                  <span class="metric-label">{m.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {d.results.image && (
+            <figure>
+              <img src={d.results.image} alt={d.results.imageAlt || ''} loading="lazy" decoding="async" />
+            </figure>
+          )}
+        </section>
+      )}
+
+      <!-- ── TESTIMONIAL ── -->
+      {d.testimonial && (
+        <blockquote class="testimonial">
+          <p>"{d.testimonial.quote}"</p>
+          <footer>
+            <strong>{d.testimonial.author}</strong>
+            {d.testimonial.role && <span>{d.testimonial.role}</span>}
+          </footer>
+        </blockquote>
+      )}
+
+      <!-- ── REFLECTION ── -->
+      {d.reflection && (
+        <section class="cs-section cs-reflection">
+          {d.reflection.heading && <h2>{d.reflection.heading}</h2>}
+          <div class="cs-body" set:html={d.reflection.body.replace(/\n/g, '<br/>')} />
+        </section>
+      )}
+
+      <!-- ── MARKDOWN BODY (additional free-form content) ── -->
+      <div class="cs-content"><Content /></div>
+    </div>
+
+    <!-- ── GALLERY ── -->
+    {d.gallery.length > 0 && (
+      <div class="gallery">
+        {d.gallery.map(img => (
+          <figure>
+            <img src={img.src} alt={img.alt || ''} loading="lazy" decoding="async" />
+            {img.caption && <figcaption>{img.caption}</figcaption>}
+          </figure>
+        ))}
+      </div>
+    )}
+
+    <!-- ── FOOTER ── -->
+    <footer class="project-footer">
+      <a href="/projects" class="back-link">&larr; All projects</a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  /* ── Layout ── */
+  .project-page { min-height: 100vh; background: #fafafa; }
+
+  .hero {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: clamp(2rem, 1.5rem + 3vw, 5rem) clamp(1.5rem, 1rem + 2vw, 4rem) clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  }
+
+  .back-link {
+    display: inline-block;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.7rem + 0.2vw, 0.9rem);
+    color: rgba(0, 0, 0, 0.5);
+    text-decoration: none;
+    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: rgba(0, 0, 0, 0.85); }
+
+  /* ── Meta bar ── */
+  .meta-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+    gap: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+  }
+
+  .meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
+  .meta-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.6rem, 0.55rem + 0.1vw, 0.7rem);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0, 0, 0, 0.4);
+  }
+  .meta-value {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.75rem + 0.15vw, 0.9rem);
+    color: #171717;
+    line-height: 1.4;
+  }
+  .meta-company { display: flex; align-items: center; gap: 0.4rem; }
+  .company-logo { height: 1.1em; width: auto; object-fit: contain; }
+
+  /* ── Hero text ── */
+  .hero h1 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+    font-weight: 500;
+    color: #171717;
+    line-height: 1.1;
+    margin: 0 0 0.5rem;
+  }
+
+  .subtitle {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.1rem, 1rem + 0.3vw, 1.35rem);
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+    margin: 0 0 0.75rem;
+  }
+
+  .lead {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.6;
+    margin: 0 0 1rem;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.55);
+  }
+
+  .ext-links {
+    display: flex; gap: 1rem; margin-left: 0.5rem;
+  }
+  .ext-links a {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.75rem + 0.1vw, 0.9rem);
+    color: #e53e3e;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .ext-links a:hover { opacity: 0.7; }
+
+  /* ── Cover ── */
+  .cover-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem);
+  }
+  .cover-wrap img, .cover-wrap video {
+    width: 100%;
+    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    background: #e5e5e5;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  /* ── Case study sections ── */
+  .case-study {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.5rem, 1rem + 2vw, 4rem);
+  }
+
+  .cs-section {
+    margin-bottom: clamp(2.5rem, 2rem + 1.5vw, 4rem);
+  }
+
+  .cs-section h2 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.25rem, 1rem + 0.5vw, 1.75rem);
+    font-weight: 500;
+    color: #171717;
+    margin: 0 0 clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+  }
+
+  .cs-body, .results-body {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.9rem, 0.85rem + 0.15vw, 1.05rem);
+    line-height: 1.7;
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  .cs-body :global(strong) { color: #171717; font-weight: 600; }
+
+  .cs-section figure {
+    margin: clamp(1rem, 0.75rem + 0.5vw, 1.5rem) 0 0;
+  }
+  .cs-section figure img {
+    width: 100%;
+    border-radius: clamp(0.375rem, 0.25rem + 0.25vw, 0.5rem);
+    background: #e5e5e5;
+  }
+  .cs-section figcaption {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    color: rgba(0, 0, 0, 0.4);
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  /* ── Metrics ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+    gap: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    margin-top: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+  }
+
+  .metric-value {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.75rem, 1.5rem + 1vw, 2.5rem);
+    font-weight: 600;
+    color: #e53e3e;
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.75rem, 0.7rem + 0.1vw, 0.85rem);
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.35rem;
+    line-height: 1.3;
+  }
+
+  /* ── Testimonial ── */
+  .testimonial {
+    margin: clamp(2rem, 1.5rem + 1.5vw, 3.5rem) 0;
+    padding: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    background: #fff;
+    border-left: 3px solid #e53e3e;
+    border-radius: 0 clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem) clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem) 0;
+  }
+
+  .testimonial p {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1rem, 0.9rem + 0.25vw, 1.15rem);
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.6;
+    margin: 0 0 0.75rem;
+  }
+
+  .testimonial footer {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.75rem + 0.1vw, 0.9rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .testimonial footer strong { color: #171717; }
+  .testimonial footer span { color: rgba(0, 0, 0, 0.45); }
+
+  /* ── Reflection ── */
+  .cs-reflection { border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: clamp(2rem, 1.5rem + 1vw, 3rem); }
+
+  /* ── Free-form markdown ── */
+  .cs-content:empty { display: none; }
+  .cs-content :global(h2) {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.25rem, 1rem + 0.5vw, 1.75rem);
+    font-weight: 500;
+    margin: clamp(2rem, 1.5rem + 1vw, 3rem) 0 0.75rem;
+    color: #171717;
+  }
+  .cs-content :global(p) {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.9rem, 0.85rem + 0.15vw, 1.05rem);
+    line-height: 1.7;
+    color: rgba(0, 0, 0, 0.65);
+    margin: 0 0 1rem;
+  }
+  .cs-content :global(strong) { color: #171717; font-weight: 600; }
+  .cs-content :global(ul) { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .cs-content :global(li) {
+    font-size: clamp(0.9rem, 0.85rem + 0.15vw, 1.05rem);
+    line-height: 1.6; color: rgba(0, 0, 0, 0.65);
+    padding-left: 1.25rem; position: relative;
+  }
+  .cs-content :global(li::before) {
+    content: ''; position: absolute; left: 0; top: 0.6em;
+    width: 6px; height: 6px; border-radius: 50%; background: #e53e3e;
+  }
+
+  /* ── Gallery ── */
+  .gallery {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem) clamp(2rem, 1.5rem + 2vw, 4rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+  }
+
+  .gallery figure { margin: 0; }
+  .gallery img {
+    width: 100%;
+    border-radius: clamp(0.375rem, 0.25rem + 0.25vw, 0.5rem);
+    background: #e5e5e5;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+  .gallery figcaption {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    color: rgba(0, 0, 0, 0.4);
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  /* ── Footer ── */
+  .project-footer {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem) clamp(3rem, 2rem + 2vw, 5rem);
+  }
+</style>

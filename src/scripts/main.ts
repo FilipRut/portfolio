@@ -11,26 +11,78 @@ gsap.registerPlugin(ScrollTrigger);
 gsap.ticker.lagSmoothing(0);
 gsap.config({ force3D: true });
 
+/* ── Responsive design tokens ──
+ * All layout sizes use clamp() so they scale fluidly between mobile (320px) and desktop (1920px).
+ * WCAG touch target minimum: 2.75rem (44px at 16px base) */
+const T = {
+    // Collapsed pill
+    pillH:        'clamp(2.75rem, 2.5rem + 0.5vw, 3.25rem)',   // 44–52px
+    pillPad:      'clamp(0.25rem, 0.2rem + 0.1vw, 0.25rem)',     // ~4px uniform
+    pillRadius:   'clamp(1.875rem, 1.75rem + 0.25vw, 1.875rem)', // ~30px (pill shape needs full rounding)
+    // Textarea inside pill
+    inputH:       'clamp(2.75rem, 2.5rem + 0.5vw, 3.25rem)',    // matches pill
+    inputRadius:  'clamp(1.625rem, 1.5rem + 0.25vw, 1.625rem)',  // ~26px (inner pill rounding)
+    inputPadX:    'clamp(0.75rem, 0.6rem + 0.3vw, 1rem)',       // 12–16px
+    // Buttons
+    btnSize:      'clamp(2rem, 1.75rem + 0.5vw, 2.25rem)',      // 32–36px
+    btnIconSize:  'clamp(0.875rem, 0.75rem + 0.25vw, 1rem)',    // 14–16px
+    btnSizeLg:    'clamp(2.5rem, 2.25rem + 0.5vw, 3rem)',       // 40–48px
+    btnIconSizeLg:'clamp(1rem, 0.875rem + 0.25vw, 1.25rem)',    // 16–20px
+    // Overlay bottom (bubbles bar)
+    barH:         'clamp(2.75rem, 2.5rem + 0.5vw, 3.25rem)',    // matches pill
+    barPadY:      'clamp(0.2rem, 0.15rem + 0.1vw, 0.25rem)',     // 3–4px (top/bottom)
+    barPadX:      'clamp(0.3rem, 0.25rem + 0.15vw, 0.375rem)',   // 4–6px (left/right)
+    // Bubbles
+    bubbleH:      'clamp(1.75rem, 1.5rem + 0.5vw, 2rem)',       // 28–32px
+    bubblePadX:   'clamp(0.625rem, 0.5rem + 0.25vw, 0.875rem)', // 10–14px
+    bubbleFontSz: 'clamp(0.7rem, 0.65rem + 0.15vw, 0.8rem)',   // 11–13px
+    // Intermediate collapse keyframe
+    midH:         'clamp(5.5rem, 5rem + 1vw, 7.5rem)',          // 88–120px
+    midPad:       'clamp(0.3rem, 0.25rem + 0.1vw, 0.5rem)',     // 4–8px
+    midRadius:    'clamp(0.75rem, 0.6rem + 0.3vw, 1rem)',       // 12–16px
+    midInputH:    'clamp(5rem, 4.5rem + 1vw, 6.25rem)',         // 72–100px
+    // Top offset for collapsed pill
+    topOffset:    'clamp(0.5rem, 0.25rem + 0.5vw, 1rem)',       // 8–16px
+    // Expanded textarea (hero / chat open)
+    expandedMinH: 'clamp(14rem, 10rem + 7vw, 22rem)',
+    expandedRadius:'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)',
+    expandedPadT: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)',
+    expandedPadB: 'clamp(4.5rem, 3.5rem + 1.5vw, 6rem)',
+    expandedPadX: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)',
+    barPadExpanded:'clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem)',
+    glassMinH:    'clamp(16rem, 12rem + 8vw, 24rem)',
+    glassPad:     'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)',
+    glassRadius:  'clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem)',
+};
+
 function init() {
     initClock();
 
     /* ── HERO ENTRANCE ── */
-    const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    const alreadyScrolled = window.scrollY > 50;
 
-    heroTl.fromTo('.hero-label',
-        { y: -20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, stagger: 0.15 }
-    );
+    if (alreadyScrolled) {
+        gsap.set('.hero-label', { y: 0, opacity: 1 });
+        gsap.set('.hero-line', { scaleY: 1 });
+        gsap.set('.hero-letter', { y: '0%', opacity: 1 });
+    } else {
+        const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    heroTl.from('.hero-line', {
-        scaleY: 0, transformOrigin: 'top center',
-        duration: 1, stagger: 0.08, ease: 'power2.inOut',
-    }, '-=0.6');
+        heroTl.fromTo('.hero-label',
+            { y: -20, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.8, stagger: 0.15 }
+        );
 
-    heroTl.fromTo('.hero-letter',
-        { y: '120%', opacity: 0 },
-        { y: '0%', opacity: 1, duration: 1.4, stagger: 0.12, ease: 'power4.out' },
-    '-=0.8');
+        heroTl.from('.hero-line', {
+            scaleY: 0, transformOrigin: 'top center',
+            duration: 1, stagger: 0.08, ease: 'power2.inOut',
+        }, '-=0.6');
+
+        heroTl.fromTo('.hero-letter',
+            { y: '120%', opacity: 0 },
+            { y: '0%', opacity: 1, duration: 1.4, stagger: 0.12, ease: 'power4.out' },
+        '-=0.8');
+    }
 
     /* ── FIXED PROMPTER ── */
     const prompterFixed = document.querySelector<HTMLElement>('#prompter-fixed')!;
@@ -42,7 +94,7 @@ function init() {
 
     const vh = window.innerHeight;
     const isMobile = window.innerWidth < 768;
-    
+
     initHeroGallery(vh, isMobile);
 
     const glassH = glassContainer.offsetHeight;
@@ -54,26 +106,43 @@ function init() {
     const sceneVignette = document.getElementById('scene-vignette')!;
 
     function buildCollapse(tl: gsap.core.Timeline) {
-        tl
-            .to(glassContainer, { keyframes: [
-                { minHeight: '120px', padding: '6px 8px', borderRadius: '16px', duration: 0.6 },
-                { minHeight: '52px', padding: '4px', borderRadius: '30px', duration: 0.4 },
-            ] }, 0)
-            .to(textareaWrap, { keyframes: [
-                { minHeight: '100px', borderRadius: '12px', duration: 0.6 },
-                { minHeight: '44px', borderRadius: '26px', duration: 0.4 },
-            ] }, 0)
-            .to('.prompter-textarea', {
-                paddingTop: '0px', paddingBottom: '0px',
-                paddingLeft: '16px', paddingRight: '16px',
-                height: '44px', lineHeight: '44px',
-                duration: 1,
-            }, 0)
-            .to('#generate-btn', { width: '36px', height: '36px', duration: 1 }, 0)
-            .to('#generate-btn svg', { width: '16px', height: '16px', duration: 1 }, 0)
-            .to(overlayTop, { opacity: 0, duration: 0.3 }, 0)
-            .to(overlayBottom, { height: '44px', padding: '4px 6px', duration: 1 }, 0)
-            .to('.prompt-bubble', { height: '32px', paddingTop: '0px', paddingBottom: '0px', duration: 1 }, 0);
+        // Single smooth collapse: expanded → pill. No intermediate keyframes.
+        // Overlay fades out first (0–0.3), then container shrinks (0.1–1.0)
+        tl.to(overlayTop, { opacity: 0, duration: 0.3 }, 0);
+
+        // Container + textarea shrink together (0.1–1.0)
+        tl.to(glassContainer, {
+            minHeight: T.pillH,
+            paddingTop: T.pillPad, paddingBottom: T.pillPad,
+            paddingLeft: T.pillPad, paddingRight: T.pillPad,
+            borderTopLeftRadius: T.pillRadius, borderTopRightRadius: T.pillRadius,
+            borderBottomLeftRadius: T.pillRadius, borderBottomRightRadius: T.pillRadius,
+            duration: 0.9, ease: 'power2.inOut',
+        }, 0.1);
+
+        tl.to(textareaWrap, {
+            minHeight: T.inputH,
+            borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius,
+            borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius,
+            duration: 0.9, ease: 'power2.inOut',
+        }, 0.1);
+
+        tl.to('.prompter-textarea', {
+            paddingTop: '0px', paddingBottom: '0px',
+            paddingLeft: T.inputPadX, paddingRight: T.inputPadX,
+            height: T.inputH, lineHeight: T.inputH,
+            duration: 0.9,
+        }, 0.1);
+
+        tl.to('#generate-btn', { width: T.btnSize, height: T.btnSize, duration: 0.9 }, 0.1);
+        tl.to('#generate-btn svg', { width: T.btnIconSize, height: T.btnIconSize, duration: 0.9 }, 0.1);
+        tl.to(overlayBottom, {
+            height: T.barH,
+            paddingTop: T.barPadY, paddingBottom: T.barPadY,
+            paddingLeft: T.barPadX, paddingRight: T.barPadX,
+            duration: 0.9,
+        }, 0.1);
+        tl.to('.prompt-bubble', { height: T.bubbleH, paddingTop: '0px', paddingBottom: '0px', duration: 0.9 }, 0.1);
     }
 
     const promptInput = document.querySelector<HTMLTextAreaElement>('#ai-prompt')!;
@@ -81,7 +150,6 @@ function init() {
     initMatrixCursor(promptInput);
     initPlaceholder(promptInput);
 
-    // In collapsed mode, scroll textarea so the last word is always visible
     promptInput.addEventListener('input', () => {
         promptInput.scrollLeft = promptInput.scrollWidth;
     });
@@ -90,14 +158,14 @@ function init() {
 
     if (isMobile) {
         gsap.set(prompterColumn, { y: 0 });
-        gsap.set(glassContainer, { minHeight: '52px', padding: '4px', borderRadius: '30px' });
-        gsap.set(textareaWrap, { minHeight: '44px', borderRadius: '26px' });
-        gsap.set('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', paddingLeft: '16px', paddingRight: '16px', height: '44px', lineHeight: '44px' });
-        gsap.set('#generate-btn', { width: '36px', height: '36px' });
-        gsap.set('#generate-btn svg', { width: '16px', height: '16px' });
+        gsap.set(glassContainer, { minHeight: T.pillH, paddingTop: T.pillPad, paddingBottom: T.pillPad, paddingLeft: T.pillPad, paddingRight: T.pillPad, borderTopLeftRadius: T.pillRadius, borderTopRightRadius: T.pillRadius, borderBottomLeftRadius: T.pillRadius, borderBottomRightRadius: T.pillRadius });
+        gsap.set(textareaWrap, { minHeight: T.inputH, borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius, borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius });
+        gsap.set('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', paddingLeft: T.inputPadX, paddingRight: T.inputPadX, height: T.inputH, lineHeight: T.inputH });
+        gsap.set('#generate-btn', { width: T.btnSize, height: T.btnSize });
+        gsap.set('#generate-btn svg', { width: T.btnIconSize, height: T.btnIconSize });
         gsap.set(overlayTop, { opacity: 0 });
-        gsap.set(overlayBottom, { height: '44px', padding: '4px 6px' });
-        gsap.set('.prompt-bubble', { paddingTop: '0px', paddingBottom: '0px', lineHeight: '30px' });
+        gsap.set(overlayBottom, { height: T.barH, padding: T.barPad });
+        gsap.set('.prompt-bubble', { paddingTop: '0px', paddingBottom: '0px', lineHeight: T.bubbleH });
 
         let mobileExpanded = false;
         glassContainer.addEventListener('click', () => {
@@ -111,13 +179,13 @@ function init() {
             mobileExpanded = true;
             const expandTl = gsap.timeline({ defaults: { duration: 0.4, ease: 'power3.out' } });
             expandTl
-                .to(glassContainer, { minHeight: '50vh', padding: 'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)', borderRadius: 'clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem)' }, 0)
-                .to(textareaWrap, { minHeight: 'calc(50vh - 2rem)', borderRadius: 'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)' }, 0)
-                .to('.prompter-textarea', { paddingTop: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)', paddingBottom: 'clamp(4.5rem, 3.5rem + 1.5vw, 6rem)', paddingLeft: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)', paddingRight: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)', height: '100%', lineHeight: '1.6' }, 0)
-                .to('#generate-btn', { width: '32px', height: '32px' }, 0)
-                .to('#generate-btn svg', { width: '18px', height: '18px' }, 0)
+                .to(glassContainer, { minHeight: '50vh', padding: T.glassPad, borderTopLeftRadius: T.glassRadius, borderTopRightRadius: T.glassRadius, borderBottomLeftRadius: T.glassRadius, borderBottomRightRadius: T.glassRadius }, 0)
+                .to(textareaWrap, { minHeight: 'calc(50vh - 2rem)', borderTopLeftRadius: T.expandedRadius, borderTopRightRadius: T.expandedRadius, borderBottomLeftRadius: T.expandedRadius, borderBottomRightRadius: T.expandedRadius }, 0)
+                .to('.prompter-textarea', { paddingTop: T.expandedPadT, paddingBottom: T.expandedPadB, paddingLeft: T.expandedPadX, paddingRight: T.expandedPadX, height: '100%', lineHeight: '1.6' }, 0)
+                .to('#generate-btn', { width: T.btnSize, height: T.btnSize }, 0)
+                .to('#generate-btn svg', { width: T.btnIconSizeLg, height: T.btnIconSizeLg }, 0)
                 .to(overlayTop, { opacity: 1 }, 0)
-                .to(overlayBottom, { height: 'auto', padding: 'clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem)' }, 0)
+                .to(overlayBottom, { height: 'auto', padding: T.barPadExpanded }, 0)
                 .to('.prompt-bubble', { paddingTop: '', paddingBottom: '', lineHeight: '', clearProps: 'paddingTop,paddingBottom,lineHeight' }, 0);
         });
 
@@ -126,14 +194,14 @@ function init() {
             mobileExpanded = false;
             const collapseTl = gsap.timeline({ defaults: { duration: 0.3, ease: 'power2.in' } });
             collapseTl
-                .to(glassContainer, { minHeight: '52px', padding: '4px', borderRadius: '30px' }, 0.1)
-                .to(textareaWrap, { minHeight: '44px', borderRadius: '26px' }, 0.1)
-                .to('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', paddingLeft: '16px', paddingRight: '16px', height: '44px', lineHeight: '44px' }, 0.1)
-                .to('#generate-btn', { width: '36px', height: '36px' }, 0.1)
-                .to('#generate-btn svg', { width: '16px', height: '16px' }, 0.1)
+                .to(glassContainer, { minHeight: T.pillH, paddingTop: T.pillPad, paddingBottom: T.pillPad, paddingLeft: T.pillPad, paddingRight: T.pillPad, borderTopLeftRadius: T.pillRadius, borderTopRightRadius: T.pillRadius, borderBottomLeftRadius: T.pillRadius, borderBottomRightRadius: T.pillRadius }, 0.1)
+                .to(textareaWrap, { minHeight: T.inputH, borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius, borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius }, 0.1)
+                .to('.prompter-textarea', { paddingTop: '0px', paddingBottom: '0px', paddingLeft: T.inputPadX, paddingRight: T.inputPadX, height: T.inputH, lineHeight: T.inputH }, 0.1)
+                .to('#generate-btn', { width: T.btnSize, height: T.btnSize }, 0.1)
+                .to('#generate-btn svg', { width: T.btnIconSize, height: T.btnIconSize }, 0.1)
                 .to(overlayTop, { opacity: 0, duration: 0.15 }, 0)
-                .to(overlayBottom, { height: '44px', padding: '4px 6px' }, 0.1)
-                .to('.prompt-bubble', { paddingTop: '0px', paddingBottom: '0px', lineHeight: '32px' }, 0.1);
+                .to(overlayBottom, { height: T.barH, padding: T.barPad }, 0.1)
+                .to('.prompt-bubble', { paddingTop: '0px', paddingBottom: '0px', lineHeight: T.bubbleH }, 0.1);
         });
     } else {
         gsap.set(prompterColumn, { y: yOffScreen });
@@ -194,7 +262,35 @@ function init() {
         }
     );
 
+    // Process section — staggered reveal
+    gsap.fromTo('.process-el',
+        { y: 30, opacity: 0 },
+        {
+            y: 0, opacity: 1, duration: 0.7, stagger: 0.1, ease: 'power3.out',
+            scrollTrigger: { trigger: '#process', start: 'top 75%', once: true },
+        }
+    );
+
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    async function sendToAI(history: { role: string; text: string }[]): Promise<string> {
+        try {
+            const messages = history.map(m => ({
+                role: m.role === 'bot' ? 'assistant' : 'user',
+                content: m.text,
+            }));
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages }),
+            });
+            const data = await res.json();
+            if (data.error) return data.error;
+            return data.reply || 'Sorry, I could not generate a response.';
+        } catch {
+            return 'Connection error — please try again.';
+        }
+    }
     const generateBtn = document.querySelector<HTMLButtonElement>('#generate-btn')!;
     const triggers = document.querySelectorAll<HTMLButtonElement>('.prompt-bubble');
     const chatOverlay = document.getElementById('chat-overlay')!;
@@ -242,22 +338,21 @@ function init() {
     function showSpinner() { chatSpinner.classList.add('is-active'); }
     function hideSpinner() { chatSpinner.classList.remove('is-active'); }
 
-    // Collapsed state — WCAG: min 44px touch targets, readable text
-    const collapsedGlassValues = { minHeight: '52px', padding: '4px', borderRadius: '30px' };
-    const collapsedTextareaWrapValues = { minHeight: '44px', borderRadius: '26px' };
-    // paddingRight clears the buttons area; direction:rtl shows end of text (last word visible)
-    const collapsedTextareaValues = { paddingTop: '0px', paddingBottom: '0px', paddingLeft: '16px', paddingRight: '50%', height: '44px', lineHeight: '44px' };
-    const collapsedBtnValues = { width: '36px', height: '36px' };
-    const collapsedBtnSvgValues = { width: '16px', height: '16px' };
+    // Collapsed state — WCAG: min 2.75rem (44px) touch targets, all values responsive
+    const collapsedGlassValues = { minHeight: T.pillH, paddingTop: T.pillPad, paddingBottom: T.pillPad, paddingLeft: T.pillPad, paddingRight: T.pillPad, borderTopLeftRadius: T.pillRadius, borderTopRightRadius: T.pillRadius, borderBottomLeftRadius: T.pillRadius, borderBottomRightRadius: T.pillRadius };
+    const collapsedTextareaWrapValues = { minHeight: T.inputH, borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius, borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius };
+    const collapsedTextareaValues = { paddingTop: '0px', paddingBottom: '0px', paddingLeft: T.inputPadX, paddingRight: '50%', height: T.inputH, lineHeight: T.inputH };
+    const collapsedBtnValues = { width: T.btnSize, height: T.btnSize };
+    const collapsedBtnSvgValues = { width: T.btnIconSize, height: T.btnIconSize };
     const collapsedOverlayTopValues = { opacity: 0 };
-    const collapsedOverlayBottomValues = { height: '44px', padding: '4px 6px' };
+    const collapsedOverlayBottomValues = { height: T.barH, paddingTop: T.barPadY, paddingBottom: T.barPadY, paddingLeft: T.barPadX, paddingRight: T.barPadX };
     const collapsedBubbleValues = {
-        height: '32px',
+        height: T.bubbleH,
         paddingTop: '0px',
         paddingBottom: '0px',
-        paddingLeft: '14px',
-        paddingRight: '14px',
-        fontSize: '0.8rem'
+        paddingLeft: T.bubblePadX,
+        paddingRight: T.bubblePadX,
+        fontSize: T.bubbleFontSz,
     };
 
     function collapseToOriginal(): gsap.core.Timeline {
@@ -274,93 +369,79 @@ function init() {
         return tl;
     }
 
-    // Chat panel geometry — bottom-anchored
-    const chatPanelH = Math.min(vh * 0.5, 500);
-    const chatBottomPad = 100; // space for buddy character
-    const yPillAtBottom = vh - chatBottomPad - 52;   // pill bottom sits at vh - pad
+    // Chat panel geometry — bottom-anchored, responsive
+    const chatPanelH = vh * 0.8;
+    const chatBottomPad = vh * 0.1;  // 10% of viewport for buddy character
+    const pillCollapsedH = Math.max(44, Math.min(52, vh * 0.06)); // responsive pill height (px for calc)
+    const yPillAtBottom = vh - chatBottomPad - pillCollapsedH;
     const yPanelExpanded = vh - chatBottomPad - chatPanelH; // expanded panel top edge
 
     // Whether the chat input area has been shrunk to compact bar after first response
     let chatInputCompacted = false;
 
     function openChatTransition(compact: boolean): gsap.core.Timeline {
-        const tl = gsap.timeline();
+        const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
-        // Prepare chat elements (hidden, ready to fade in)
+        // Prepare chat elements (hidden, will fade in later)
         chatMessagesInline.style.display = 'flex';
         chatCloseInline.style.display = 'grid';
         gsap.set([chatMessagesInline, chatCloseInline], { opacity: 0 });
+        chatInputCompacted = true;
 
-        if (compact) {
-            // Returning with history — compact input bar at bottom
-            tl.to(textareaWrap, { flex: 'none', minHeight: '52px', borderRadius: '26px', duration: 0.25, ease: 'power2.out' }, 0);
-            tl.to('.prompter-textarea', { ...collapsedTextareaValues, duration: 0.25 }, 0);
-            tl.to('#generate-btn', collapsedBtnValues, 0);
-            tl.to('#generate-btn svg', collapsedBtnSvgValues, 0);
-            tl.to(overlayTop, { opacity: 0, duration: 0.15 }, 0);
-            tl.to(overlayBottom, collapsedOverlayBottomValues, 0);
-            tl.to('.prompt-bubble', { ...collapsedBubbleValues, opacity: 0, duration: 0.25 }, 0);
-            chatInputCompacted = true;
-        } else {
-            // Fresh open — keep hero-style expanded textarea with bubbles visible
-            tl.to(textareaWrap, {
-                flex: 'none',
-                minHeight: 'clamp(14rem, 10rem + 7vw, 22rem)',
-                borderRadius: 'clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem)',
-                duration: 0.5, ease: 'power2.out',
-            }, 0);
-            tl.to('.prompter-textarea', {
-                paddingTop: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)',
-                paddingBottom: 'clamp(4.5rem, 3.5rem + 1.5vw, 6rem)',
-                paddingLeft: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)',
-                paddingRight: 'clamp(1rem, 0.75rem + 0.5vw, 1.5rem)',
-                height: '100%', lineHeight: '1.6',
-                duration: 0.5,
-            }, 0);
-            tl.to('#generate-btn', { width: '48px', height: '48px', duration: 0.4 }, 0);
-            tl.to('#generate-btn svg', { width: '20px', height: '20px', duration: 0.4 }, 0);
-            tl.to(overlayTop, { opacity: 1, duration: 0.3 }, 0);
-            tl.to(overlayBottom, { height: 'auto', padding: 'clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem)', duration: 0.4 }, 0);
-            tl.to('.prompt-bubble', {
-                height: '32px', paddingTop: '0px', paddingBottom: '0px',
-                paddingLeft: '18px', paddingRight: '18px', fontSize: '0.875rem',
-                opacity: 1, duration: 0.4,
-            }, 0);
-            chatInputCompacted = false;
-        }
+        // Capture current pill height for smooth maxHeight animation
+        const pillH = glassContainer.offsetHeight;
 
-        if (!isMobile) {
-            // Single continuous y motion via keyframes — no seam between phases
-            tl.to(prompterColumn, { keyframes: [
-                { y: yPillAtBottom, duration: 0.38, ease: 'power2.in' },    // slide down
-                { y: yPanelExpanded, duration: 0.48, ease: 'power2.out' },  // expand up
-            ] }, 0);
-        }
-
-        // Glass expansion — starts when pill nears bottom, overlaps with y phase 2
-        const expandAt = isMobile ? 0.08 : 0.28;
-        tl.to(glassContainer, {
-            minHeight: chatPanelH,
-            borderRadius: '1.25rem',
-            padding: 'clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem)',
-            duration: 0.5,
-            ease: 'power2.out',
-        }, expandAt);
-
-        // Chat-mode class for bg/shadow — add slightly early so CSS transition blends in
-        tl.call(() => glassContainer.classList.add('chat-mode'), undefined, expandAt - 0.05);
-
-        // Dim behind — start immediately, slow fade
-        tl.call(() => { chatOverlay.classList.add('is-active'); }, undefined, 0);
+        // Phase 1 (0–0.15s): Hide bubbles, add chat-mode, start dim
+        tl.to('.prompt-bubble', { opacity: 0, duration: 0.12 }, 0);
+        tl.to(overlayTop, { opacity: 0, duration: 0.1 }, 0);
+        tl.call(() => {
+            chatOverlay.classList.add('is-active');
+            glassContainer.classList.add('chat-mode');
+        }, undefined, 0);
         gsap.set(chatDim, { opacity: 0 });
-        tl.to(chatDim, { opacity: 1, duration: 0.6, ease: 'power1.out' }, 0.05);
+        tl.to(chatDim, { opacity: 1, duration: 0.5 }, 0);
+        if (!isMobile) {
+            tl.to(sceneVignette, { opacity: 0, duration: 0.3 }, 0);
+        }
 
-        // Messages & close fade in once panel is mostly expanded
-        tl.to(chatMessagesInline, { opacity: 1, duration: 0.35, ease: 'power1.out' }, expandAt + 0.25);
-        tl.to(chatCloseInline, { opacity: 1, duration: 0.3, ease: 'power1.out' }, expandAt + 0.3);
+        // Phase 2 (0.05–0.55s): Grow glass from pill → panel using maxHeight
+        // Column stays at yTop, glass grows downward. Then column slides to final Y.
+        const growDur = 0.45;
+        gsap.set(glassContainer, { maxHeight: pillH + 'px', overflow: 'hidden' });
+        tl.to(glassContainer, {
+            maxHeight: chatPanelH + 'px',
+            minHeight: chatPanelH + 'px',
+            borderTopLeftRadius: T.glassRadius, borderTopRightRadius: T.glassRadius,
+            borderBottomLeftRadius: T.glassRadius, borderBottomRightRadius: T.glassRadius,
+            paddingTop: T.glassPad, paddingBottom: T.glassPad,
+            paddingLeft: T.glassPad, paddingRight: T.glassPad,
+            duration: growDur,
+            ease: 'power3.out',
+        }, 0.05);
 
-        // Vignette off (desktop)
-        if (!isMobile) tl.to(sceneVignette, { opacity: 0, duration: 0.4 }, 0);
+        // Compact the input bar alongside expansion
+        tl.to(textareaWrap, { flex: 'none', minHeight: T.pillH, borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius, borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius, duration: 0.25 }, 0.05);
+        tl.to('.prompter-textarea', { ...collapsedTextareaValues, duration: 0.25 }, 0.05);
+        tl.to('#generate-btn', { ...collapsedBtnValues, duration: 0.25 }, 0.05);
+        tl.to('#generate-btn svg', { ...collapsedBtnSvgValues, duration: 0.25 }, 0.05);
+        tl.to(overlayBottom, { ...collapsedOverlayBottomValues, duration: 0.25 }, 0.05);
+
+        // Slide column to chat position (slightly delayed so growth is visible first)
+        if (!isMobile) {
+            tl.to(prompterColumn, { y: yPanelExpanded, duration: 0.5, ease: 'power3.inOut' }, 0.1);
+        }
+
+        // Set column layout for chat (after glass is mostly grown)
+        tl.call(() => {
+            prompterColumn.style.justifyContent = 'flex-end';
+            prompterColumn.style.height = chatPanelH + 'px';
+            glassContainer.style.maxHeight = '';
+            glassContainer.style.overflow = '';
+        }, undefined, 0.05 + growDur);
+
+        // Phase 3 (0.4–0.65s): Fade in chat content
+        tl.to(chatMessagesInline, { opacity: 1, duration: 0.25 }, 0.35);
+        tl.to(chatCloseInline, { opacity: 1, duration: 0.2 }, 0.4);
 
         return tl;
     }
@@ -370,7 +451,7 @@ function init() {
         if (chatInputCompacted) return;
         chatInputCompacted = true;
         const tl = gsap.timeline({ defaults: { duration: 0.4, ease: 'power2.inOut' } });
-        tl.to(textareaWrap, { minHeight: '52px', borderRadius: '26px' }, 0);
+        tl.to(textareaWrap, { minHeight: T.pillH, borderTopLeftRadius: T.inputRadius, borderTopRightRadius: T.inputRadius, borderBottomLeftRadius: T.inputRadius, borderBottomRightRadius: T.inputRadius }, 0);
         tl.to('.prompter-textarea', { ...collapsedTextareaValues }, 0);
         tl.to('#generate-btn', collapsedBtnValues, 0);
         tl.to('#generate-btn svg', collapsedBtnSvgValues, 0);
@@ -386,9 +467,10 @@ function init() {
         const tl = openChatTransition(chatHistory.length > 1);
         await tl;
         promptInput.value = ''; promptInput.focus();
-        showSpinner(); await wait(1500); hideSpinner();
+        showSpinner();
         compactChatInput();
-        const botResponse = 'Już ci odpowiadam...';
+        const botResponse = await sendToAI(chatHistory);
+        hideSpinner();
         chatHistory.push({ role: 'bot', text: botResponse }); saveChat(); appendBubble('bot', botResponse);
     }
 
@@ -396,40 +478,60 @@ function init() {
         if (!chatMode) return; chatMode = false; isSending = false;
         const tl = gsap.timeline();
 
-        // 1. Content fades out fast
-        tl.to([chatMessagesInline, chatCloseInline], { opacity: 0, duration: 0.18, ease: 'power1.in' }, 0);
+        // Phase 1 (0–0.15s): Fade out chat content fast
+        tl.to([chatMessagesInline, chatCloseInline], { opacity: 0, duration: 0.12, ease: 'power1.in' }, 0);
 
-        // Remove chat-mode class early so CSS bg transition starts fading
-        tl.call(() => glassContainer.classList.remove('chat-mode'), undefined, 0.08);
+        // Phase 2 (0.1–0.5s): Shrink glass to pill + slide up simultaneously
+        // Keep chat-mode (white bg) DURING shrink so it doesn't flash transparent mid-animation
+        const s = 0.1;
+        tl.to(chatDim, { opacity: 0, duration: 0.35, ease: 'power1.in' }, s);
+        tl.set(prompterColumn, { justifyContent: '', height: '' }, s);
 
-        // Dim fades out
-        tl.to(chatDim, { opacity: 0, duration: 0.45, ease: 'power1.in' }, 0.05);
+        // Hide chat messages container immediately so it doesn't hold height
+        tl.set(chatMessagesInline, { display: 'none' }, s);
 
-        // 2. Shrink panel (bottom-anchored) then slide pill up — single keyframe motion
-        const shrinkAt = 0.12;
-        tl.to(glassContainer, { ...collapsedGlassValues, duration: 0.38, ease: 'power2.inOut' }, shrinkAt);
-        tl.to(textareaWrap, { ...collapsedTextareaWrapValues, duration: 0.38 }, shrinkAt);
-        tl.to('.prompter-textarea', { ...collapsedTextareaValues, duration: 0.3 }, shrinkAt);
-        tl.to('#generate-btn', { ...collapsedBtnValues, duration: 0.3 }, shrinkAt);
-        tl.to('#generate-btn svg', { ...collapsedBtnSvgValues, duration: 0.3 }, shrinkAt);
-        tl.to(overlayTop, { ...collapsedOverlayTopValues, duration: 0.2 }, shrinkAt);
-        tl.to(overlayBottom, { ...collapsedOverlayBottomValues, duration: 0.3 }, shrinkAt);
-        tl.to('.prompt-bubble', { ...collapsedBubbleValues, duration: 0.3 }, shrinkAt);
+        // Shrink glass — set explicit maxHeight from current size, then animate down
+        // This forces the glass to shrink even if content wants to stay tall
+        const currentGlassH = glassContainer.offsetHeight;
+        const shrinkDur = 0.4;
+        tl.set(glassContainer, { maxHeight: currentGlassH + 'px', overflow: 'hidden' }, s);
+        tl.to(glassContainer, {
+            ...collapsedGlassValues,
+            minHeight: T.pillH,
+            maxHeight: '4rem',
+            duration: shrinkDur,
+            ease: 'power2.inOut',
+        }, s);
+        tl.to(textareaWrap, { ...collapsedTextareaWrapValues, duration: shrinkDur }, s);
+        tl.to('.prompter-textarea', { ...collapsedTextareaValues, duration: shrinkDur * 0.85 }, s);
+        tl.to('#generate-btn', { ...collapsedBtnValues, duration: shrinkDur * 0.85 }, s);
+        tl.to('#generate-btn svg', { ...collapsedBtnSvgValues, duration: shrinkDur * 0.85 }, s);
+        tl.to(overlayTop, { ...collapsedOverlayTopValues, duration: 0.15 }, s);
+        tl.to(overlayBottom, { ...collapsedOverlayBottomValues, duration: shrinkDur * 0.85 }, s);
+        tl.to('.prompt-bubble', { ...collapsedBubbleValues, duration: shrinkDur * 0.85 }, s);
 
         if (!isMobile) {
-            // Continuous y motion: shrink down (bottom anchored) → fly up to top
-            tl.to(prompterColumn, { keyframes: [
-                { y: yPillAtBottom, duration: 0.38, ease: 'power2.in' },    // shrink down
-                { y: yTop, duration: 0.48, ease: 'power2.out' },           // fly up
-            ] }, shrinkAt);
+            tl.to(prompterColumn, { y: yTop, duration: 0.5, ease: 'power3.inOut' }, s);
         }
 
-        // Cleanup after all animation completes
+        // Remove chat-mode + maxHeight constraint when pill-sized
+        tl.call(() => {
+            glassContainer.classList.remove('chat-mode');
+            glassContainer.style.maxHeight = '';
+            glassContainer.style.overflow = '';
+        }, undefined, s + shrinkDur);
+
+        // Restore bubbles visibility
+        tl.to('.prompt-bubble', { opacity: 1, duration: 0.2 }, s + shrinkDur);
+
+        // Cleanup
         tl.call(() => {
             chatOverlay.classList.remove('is-active');
             chatMessagesInline.style.display = 'none';
             chatCloseInline.style.display = 'none';
             textareaWrap.style.flex = '';
+            prompterColumn.style.justifyContent = '';
+            prompterColumn.style.height = '';
             chatInputCompacted = false;
             prompterState = 'collapsed';
         });
@@ -444,8 +546,9 @@ function init() {
             chatHistory.push({ role: 'user', text: query }); saveChat(); appendBubble('user', query);
             promptInput.value = '';
             compactChatInput();
-            showSpinner(); await wait(1500); hideSpinner();
-            const botResponse = 'Już ci odpowiadam...';
+            showSpinner();
+            const botResponse = await sendToAI(chatHistory);
+            hideSpinner();
             chatHistory.push({ role: 'bot', text: botResponse }); saveChat(); appendBubble('bot', botResponse);
         } else {
             await enterChatMode(query);
@@ -460,8 +563,9 @@ function init() {
             chatHistory.push({ role: 'user', text }); saveChat(); appendBubble('user', text);
             promptInput.value = '';
             compactChatInput();
-            showSpinner(); await wait(1500); hideSpinner();
-            const botResponse = 'Już ci odpowiadam...';
+            showSpinner();
+            const botResponse = await sendToAI(chatHistory);
+            hideSpinner();
             chatHistory.push({ role: 'bot', text: botResponse }); saveChat(); appendBubble('bot', botResponse);
             isSending = false;
         } else { await enterChatMode(text); }

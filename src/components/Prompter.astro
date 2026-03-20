@@ -57,12 +57,11 @@ import PixelBuddy from './PixelBuddy.astro';
                         <div class="glass-overlay-bottom">
                             <div class="prompt-bubbles">
                                 <button class="prompt-bubble" data-prompt="Your projects?">Projects?</button>
-                                <button class="prompt-bubble" data-prompt="What tools do you use?">Tools?</button>
                                 <button class="prompt-bubble" data-prompt="What does your design process look like?">Process?</button>
                                 <button class="prompt-bubble" data-prompt="Are you open to freelance work?">Hire?</button>
                             </div>
                             <button id="generate-btn" class="prompter-send" aria-label="Send">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; transform: translate(-1px, 0px);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; transform: translate(-1px, 1px);">
                                     <path d="M22 2L11 13"></path>
                                     <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
                                 </svg>
@@ -92,6 +91,10 @@ import PixelBuddy from './PixelBuddy.astro';
     }
 
     .prompter-fixed > .prompter-column {
+        pointer-events: none;
+    }
+
+    .prompter-column .glass-container {
         pointer-events: auto;
     }
 
@@ -138,9 +141,10 @@ import PixelBuddy from './PixelBuddy.astro';
         min-height: clamp(16rem, 12rem + 8vw, 24rem);
         border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(24px) saturate(150%);
-        -webkit-backdrop-filter: blur(24px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
         will-change: transform, min-height, border-radius;
+        contain: layout style;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.25),
@@ -162,8 +166,7 @@ import PixelBuddy from './PixelBuddy.astro';
         min-height: clamp(14rem, 10rem + 7vw, 22rem);
         border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.85rem);
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(16px) saturate(130%);
-        -webkit-backdrop-filter: blur(16px) saturate(130%);
+        /* backdrop-filter removed — parent .glass-container already provides blur */
         border: 0.75px solid rgba(255, 255, 255, 0.08);
         box-shadow:
             inset 0 2px 8px rgba(0, 0, 0, 0.35),
@@ -309,8 +312,7 @@ import PixelBuddy from './PixelBuddy.astro';
         background: rgba(255, 255, 255, 0.08);
         color: rgba(255, 255, 255, 0.7);
         cursor: pointer;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(12px);
+        transition: background 0.2s ease, color 0.2s ease;
         border: 0.75px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -331,10 +333,10 @@ import PixelBuddy from './PixelBuddy.astro';
     }
 
     .prompter-send {
-        width: 48px;
-        height: 48px;
-        min-width: 36px;  /* WCAG: minimum touch target */
-        min-height: 36px;
+        width: clamp(2.5rem, 2.25rem + 0.5vw, 3rem);
+        height: clamp(2.5rem, 2.25rem + 0.5vw, 3rem);
+        min-width: 2rem;   /* GSAP overrides size; WCAG target met by clamp minimum */
+        min-height: 2rem;
         flex-shrink: 0;
         border-radius: 50%;
         background: rgba(229, 62, 62, 0.85);
@@ -342,8 +344,7 @@ import PixelBuddy from './PixelBuddy.astro';
         cursor: pointer;
         display: grid;
         place-items: center;
-        transition: all 0.25s ease;
-        backdrop-filter: blur(12px);
+        transition: background 0.25s ease;
     }
 
     /* ── Chat messages inline ── */
@@ -355,8 +356,32 @@ import PixelBuddy from './PixelBuddy.astro';
         flex-direction: column;
         gap: 0.5rem;
         min-height: 0;
+        /* Custom scrollbar — thumb matches send button color */
         scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        scrollbar-color: rgba(229, 62, 62, 0.7) transparent;
+    }
+
+    .chat-messages-inline::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages-inline::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .chat-messages-inline::-webkit-scrollbar-thumb {
+        background: rgba(229, 62, 62, 0.7);
+        border-radius: 3px;
+    }
+
+    .chat-messages-inline::-webkit-scrollbar-thumb:hover {
+        background: rgba(229, 62, 62, 0.9);
+    }
+
+    /* Push messages to bottom when content is short */
+    .chat-messages-inline::before {
+        content: '';
+        flex: 1;
     }
 
     .chat-close-inline {
@@ -364,8 +389,8 @@ import PixelBuddy from './PixelBuddy.astro';
         position: absolute;
         top: 0.6rem;
         right: 0.6rem;
-        width: 28px;
-        height: 28px;
+        width: clamp(1.5rem, 1.25rem + 0.5vw, 1.75rem);
+        height: clamp(1.5rem, 1.25rem + 0.5vw, 1.75rem);
         border-radius: 50%;
         background: rgba(0, 0, 0, 0.06);
         color: rgba(0, 0, 0, 0.4);

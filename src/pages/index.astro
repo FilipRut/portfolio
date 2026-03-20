@@ -4,9 +4,30 @@ import Hero from '../components/Hero.astro';
 import Prompter from '../components/Prompter.astro';
 import ChatOverlay from '../components/ChatOverlay.astro';
 import Intro from '../components/Intro.astro';
+import Process from '../components/Process.astro';
+import { getCollection } from 'astro:content';
+
+const projects = (await getCollection('projects'))
+	.filter(p => !p.data.draft)
+	.sort((a, b) => a.data.order - b.data.order)
+	.map(p => ({
+		id: p.id,
+		title: p.data.title,
+		client: p.data.client ?? '',
+		company: p.data.company ?? '',
+		year: p.data.year,
+		heroImage: p.data.heroImage ?? p.data.cover,
+	}));
+
+const featuredProjects = projects.slice(0, 6);
 ---
 
 <BaseLayout>
+	<!-- Project data for hero gallery cards -->
+	<script is:inline define:vars={{ projects }}>
+		window.__heroProjects = projects;
+	</script>
+
 	<!-- Global Three.js Container for transitions -->
 	<div id="global-three-container" role="img" aria-label="Interactive 3D keychain animation"></div>
 
@@ -16,7 +37,8 @@ import Intro from '../components/Intro.astro';
 	<Hero />
 	<Prompter />
 	<ChatOverlay />
-	<Intro />
+	<Intro projects={featuredProjects} />
+	<Process />
 
 	<style is:global>
 		#global-three-container {
@@ -37,6 +59,7 @@ import Intro from '../components/Intro.astro';
 			background: radial-gradient(ellipse 60% 70% at 50% 52%, transparent 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.52) 100%);
 			opacity: 0;
 			will-change: opacity;
+			contain: strict;
 		}
 
 		/* Common styles for chat bubbles (dynamicly added) */
@@ -55,9 +78,7 @@ import Intro from '../components/Intro.astro';
 		}
 		.chat-bubble--user {
 			align-self: flex-end;
-			background: linear-gradient(135deg, rgba(235, 235, 240, 0.75) 0%, rgba(220, 220, 230, 0.6) 100%);
-			backdrop-filter: blur(20px) saturate(140%);
-			-webkit-backdrop-filter: blur(20px) saturate(140%);
+			background: linear-gradient(135deg, #ebebf0 0%, #dcdce6 100%);
 			border: 1px solid rgba(255, 255, 255, 0.55);
 			box-shadow:
 				0 2px 12px rgba(0, 0, 0, 0.06),
@@ -68,9 +89,7 @@ import Intro from '../components/Intro.astro';
 		}
 		.chat-bubble--bot {
 			align-self: flex-start;
-			background: linear-gradient(135deg, rgba(229, 62, 62, 0.82) 0%, rgba(200, 45, 45, 0.75) 100%);
-			backdrop-filter: blur(20px) saturate(140%);
-			-webkit-backdrop-filter: blur(20px) saturate(140%);
+			background: linear-gradient(135deg, #e53e3e 0%, #c82d2d 100%);
 			border: 1px solid rgba(255, 255, 255, 0.18);
 			box-shadow:
 				0 2px 12px rgba(229, 62, 62, 0.22),
@@ -84,10 +103,10 @@ import Intro from '../components/Intro.astro';
 			position: absolute;
 			left: 50%;
 			top: 50%;
-			width: 36px;
-			height: 36px;
-			margin-left: -18px;
-			margin-top: -18px;
+			width: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
+			height: clamp(2rem, 1.75rem + 0.5vw, 2.25rem);
+			margin-left: clamp(-1.125rem, -0.875rem - 0.25vw, -1rem);
+			margin-top: clamp(-1.125rem, -0.875rem - 0.25vw, -1rem);
 			pointer-events: none;
 			opacity: 0;
 			z-index: 10;
@@ -98,14 +117,14 @@ import Intro from '../components/Intro.astro';
 		@keyframes spinRotate { to { transform: rotate(360deg); } }
 		.chat-spinner-dot {
 			position: absolute;
-			width: 5px;
-			height: 5px;
+			width: clamp(0.25rem, 0.2rem + 0.1vw, 0.3125rem);
+			height: clamp(0.25rem, 0.2rem + 0.1vw, 0.3125rem);
 			border-radius: 50%;
 			background: currentColor;
 			left: 50%;
 			top: 0;
-			margin-left: -2.5px;
-			transform-origin: 2.5px 18px;
+			margin-left: -0.15625rem;
+			transform-origin: 50% clamp(1rem, 0.875rem + 0.25vw, 1.125rem);
 			opacity: 0.25;
 		}
 		.chat-spinner-dot:nth-child(1) { transform: rotate(0deg); opacity: 1; }

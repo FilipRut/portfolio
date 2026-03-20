@@ -18,7 +18,7 @@ const PHYS = {
     GRAVITY:        -9.82,
     LINEAR_DAMPING:  2.0,
     ANGULAR_DAMPING: 8.0,
-    MOUSE_FORCE:     0.8,
+    MOUSE_FORCE:     1.6,
     INERTIA_FORCE:   1.5,
     FRICTION:        0.0,
     RESTITUTION:     0.0,
@@ -57,34 +57,27 @@ export function initThreeScene() {
     pmremGenerator.dispose();
 
     // ── Lighting: soft diffused + strong backlight ──
+    // Using environment map as primary lighting source; only add directional lights
+    // to shape highlights. RectAreaLights and SpotLights removed — environment
+    // map already provides soft studio reflections at zero per-frame cost.
 
-    // Ambient — slightly higher for softer overall fill
     scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-    // BACKLIGHT — stronger, further back — refracts through resin for inner glow
+    // BACKLIGHT — refracts through resin for inner glow
     const backLight = new THREE.DirectionalLight(0xffffff, 6.0);
     backLight.position.set(-2, 5, -8);
     backLight.castShadow = false;
     scene.add(backLight);
 
-    // KEY LIGHT — RectAreaLight for soft, wide panel reflections (not sharp points)
-    const keyLight = new THREE.RectAreaLight(0xffeedd, 2.5, 4, 4);
+    // KEY LIGHT — DirectionalLight instead of RectAreaLight (cheaper, env map handles softness)
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
     keyLight.position.set(5, 4, 3);
-    keyLight.lookAt(0, 0, 0);
     scene.add(keyLight);
 
-    // FILL — RectAreaLight from opposite side, cool
-    const fillLight = new THREE.RectAreaLight(0xddeeff, 1.5, 3, 3);
+    // FILL — DirectionalLight instead of RectAreaLight
+    const fillLight = new THREE.DirectionalLight(0xddeeff, 1.5);
     fillLight.position.set(-4, 2, 2);
-    fillLight.lookAt(0, 0, 0);
     scene.add(fillLight);
-
-    // RIM — SpotLight with max penumbra for soft edge glow
-    const rimLight = new THREE.SpotLight(0xffffff, 4.0);
-    rimLight.position.set(-5, 0, 2);
-    rimLight.angle = Math.PI / 4;
-    rimLight.penumbra = 1.0;
-    scene.add(rimLight);
 
     const mainGroup = new THREE.Group();
     scene.add(mainGroup);
@@ -163,7 +156,7 @@ export function initThreeScene() {
                 .setTranslation(0, 0, 0)
                 .setLinearDamping(PHYS.LINEAR_DAMPING)
                 .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                .setCcdEnabled(true)
+                .setCcdEnabled(false)
         );
         addCarabinerColliders(carabinerBody);
 
@@ -194,7 +187,7 @@ export function initThreeScene() {
                     .setTranslation(0, centerY, 0)
                     .setLinearDamping(PHYS.LINEAR_DAMPING)
                     .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                    .setCcdEnabled(true)
+                    .setCcdEnabled(false)
             );
             addRingColliders(body, ring.R, ring.tubeR, ring.N, ring.plane);
 
@@ -232,7 +225,7 @@ export function initThreeScene() {
                     .setTranslation(0, charmCenterY, 0)
                     .setLinearDamping(PHYS.LINEAR_DAMPING)
                     .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                    .setCcdEnabled(true)
+                    .setCcdEnabled(false)
             );
 
             // Box collider approximating the cube (0.88 x 0.94 x 0.39)
@@ -289,7 +282,7 @@ export function initThreeScene() {
                 thickness: 2.5,
                 attenuationColor: new THREE.Color('#ff7700'),
                 attenuationDistance: 1.5,
-                dispersion: 1.5,
+                dispersion: 0,  // Dispersion requires chromatic aberration pass — disabled for perf
                 side: THREE.DoubleSide,
             });
 
@@ -301,29 +294,22 @@ export function initThreeScene() {
 
 
             // ── Inner glowing core (cube within cube) ──
-            // Frosted transmission box inside the resin shell.
-            // Sits inside the mesh — moves and rotates with it.
+            // MeshStandardMaterial with emissive instead of second transmission pass.
+            // Visually similar warm glow, but avoids expensive double-transmission render.
             const innerGeo = new THREE.BoxGeometry(0.5, 0.55, 0.22);
-            const innerMat = new THREE.MeshPhysicalMaterial({
+            const innerMat = new THREE.MeshStandardMaterial({
                 color: 0xffcc00,
                 roughness: 0.6,
-                transmission: 0.7,
                 transparent: true,
-                thickness: 1.0,
-                ior: 1.4,
-                attenuationColor: new THREE.Color('#ff8800'),
-                attenuationDistance: 1.0,
+                opacity: 0.55,
+                emissive: new THREE.Color('#ff8800'),
+                emissiveIntensity: 0.6,
                 depthWrite: false,
                 side: THREE.DoubleSide,
             });
             const innerCore = new THREE.Mesh(innerGeo, innerMat);
             innerCore.position.set(0, -0.48, 0.05);
             mesh.add(innerCore);
-
-            // PointLight inside — feeds the glow through outer shell
-            const innerGlow = new THREE.PointLight(0xffaa44, 2.5, 2.0, 2);
-            innerGlow.position.set(0, -0.48, 0.05);
-            mesh.add(innerGlow);
 
             mesh.position.y = 0.456;
             mesh.position.z = -0.093;
@@ -362,8 +348,22 @@ export function initThreeScene() {
         return _projResult.copy(camera.position).add(_projV.multiplyScalar(-camera.position.z / _projV.z));
     }
 
+    // Phase 1: placeholder → fly to center + scale up (first 20% of intro scroll)
     const animState = { progress: 0 };
-    gsap.to(animState, { progress: 1, scrollTrigger: { trigger: '#intro', start: 'top top', end: 'bottom bottom', scrub: 0.15 } });
+    gsap.to(animState, { progress: 1, scrollTrigger: { trigger: '#intro', start: 'top top', end: '20% top', scrub: 0.15 } });
+
+    // Phase 2: hold at center (20%–40%) — showcase moment, brelok alone on screen
+    // (no animation needed — just holds position)
+
+    // Phase 3: slide down to anchor below projects (40%–75% of intro scroll)
+    const slideState = { progress: 0 };
+    gsap.to(slideState, { progress: 1, scrollTrigger: { trigger: '#intro', start: '40% top', end: '75% top', scrub: 0.15 } });
+
+    // Phase 4: exit — fade out before Process section
+    const exitState = { progress: 0 };
+    gsap.to(exitState, { progress: 1, scrollTrigger: { trigger: '#process', start: 'top bottom', end: 'top 40%', scrub: 0.15 } });
+
+    const keychainAnchor = document.getElementById('keychain-anchor');
 
     let mouseX = 0, mouseY = 0;
     window.addEventListener('mousemove', (e) => { mouseX = (e.clientX / window.innerWidth) - 0.5; mouseY = (e.clientY / window.innerHeight) - 0.5; });
@@ -391,8 +391,14 @@ export function initThreeScene() {
         hitX0 = x0 - px; hitY0 = y0 - py; hitX1 = x1 + px; hitY1 = y1 + py;
     }
 
+    const lastTile = document.querySelector('.project-tile:last-child');
     function hitTest(cx: number, cy: number): boolean {
         if (!modelLoaded) return false;
+        // Only allow interaction below the last portfolio tile
+        if (lastTile) {
+            const tileBottom = lastTile.getBoundingClientRect().bottom;
+            if (cy < tileBottom) return false;
+        }
         return cx >= hitX0 && cx <= hitX1 && cy >= hitY0 && cy <= hitY1;
     }
 
@@ -413,9 +419,19 @@ export function initThreeScene() {
     // Hit bounds throttle — every 3rd frame is enough for hover detection
     let hitBoundsCounter = 0;
 
+    // Visibility-based rendering — pause when 3D container is off-screen
+    let sceneVisible = true;
+    const visObserver = new IntersectionObserver(
+        (entries) => { sceneVisible = entries[0].isIntersecting; },
+        { threshold: 0 }
+    );
+    visObserver.observe(globalContainer);
+
     function animate() {
         requestAnimationFrame(animate);
         if (!modelLoaded || !world) return;
+        // Skip physics + render when completely off-screen
+        if (!sceneVisible) return;
 
         const time = Date.now() * 0.001;
 
@@ -461,28 +477,66 @@ export function initThreeScene() {
             }
         }
 
-        // Live placeholder position in world space (scrolls with document)
-        const rect = placeholder!.getBoundingClientRect();
-        const sp = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        const t = animState.progress;  // 0→1: placeholder → center
+        const s = slideState.progress; // 0→1: center → anchor below projects
 
-        // Remap progress: 0–30% of scroll = follow placeholder (t=0), 30–100% = fly to center (t 0→1)
-        const DETACH_AT = 0.2;
-        const t = animState.progress <= DETACH_AT ? 0 : (animState.progress - DETACH_AT) / (1 - DETACH_AT);
+        let tgtX: number, tgtYPos: number, tgtScale: number;
 
-        const tgtScale = gsap.utils.interpolate(0.34, 1.47, t);
-        const tgtX = gsap.utils.interpolate(sp.x, 0, t);
-        const tgtYPos = gsap.utils.interpolate(sp.y, 1.8, t);
+        // --- Determine target position based on phase ---
 
-        // Lerp speed blends smoothly: fast (0.5) when pinned → slow (0.1) when fully detached
-        // No hard branch — eliminates snap/jump at the transition boundary
-        const lerp = 0.5 - t * 0.4; // t=0 → 0.5, t=1 → 0.1
+        if (s > 0 && keychainAnchor) {
+            // Phase 3: slide from center to anchor below projects
+            const anchorRect = keychainAnchor.getBoundingClientRect();
+            if (anchorRect.width > 0 && anchorRect.height > 0) {
+                const anchorWorld = screenToWorld(anchorRect.left + anchorRect.width / 2, anchorRect.top + anchorRect.height / 2);
+                const anchorOffset = 0.6 * 1.47;
+                mainGroup.visible = true;
+                tgtScale = 1.47;
+                tgtX = gsap.utils.interpolate(0, anchorWorld.x, s);
+                tgtYPos = gsap.utils.interpolate(1.8, anchorWorld.y + anchorOffset, s);
+            } else {
+                // Anchor off-screen (content-visibility etc.) — hold at center
+                mainGroup.visible = true;
+                tgtScale = 1.47;
+                tgtX = 0;
+                tgtYPos = 1.8;
+            }
+        } else if (t >= 1) {
+            // Phase 2: showcase — hold at center, full size
+            mainGroup.visible = true;
+            tgtScale = 1.47;
+            tgtX = 0;
+            tgtYPos = 1.8;
+        } else {
+            // Phase 1: follow placeholder → fly to center
+            const rect = placeholder!.getBoundingClientRect();
+
+            if (rect.width === 0 && rect.height === 0) {
+                mainGroup.visible = false;
+                renderer.render(scene, camera);
+                return;
+            }
+            mainGroup.visible = true;
+
+            const sp = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            const pinnedScale = 0.34;
+            const pinnedOffset = 0.6 * pinnedScale;
+            tgtScale = gsap.utils.interpolate(pinnedScale, 1.47, t);
+            tgtX = gsap.utils.interpolate(sp.x, 0, t);
+            // Use fixed pinnedOffset as start so Y doesn't drift when scale changes during interpolation
+            tgtYPos = gsap.utils.interpolate(sp.y + pinnedOffset, 1.8, t);
+        }
+
+        // --- Smoothing ---
+        // Minimal lerp (0.5) to eliminate single-frame jitter from screenToWorld,
+        // fast enough to avoid visible lag on scroll direction changes.
         if (firstFrame) {
             smoothX = tgtX; smoothY = tgtYPos; smoothScale = tgtScale;
             firstFrame = false;
         } else {
-            smoothX += (tgtX - smoothX) * lerp;
-            smoothY += (tgtYPos - smoothY) * lerp;
-            smoothScale += (tgtScale - smoothScale) * lerp;
+            smoothX += (tgtX - smoothX) * 0.5;
+            smoothY += (tgtYPos - smoothY) * 0.5;
+            smoothScale += (tgtScale - smoothScale) * 0.5;
         }
 
         // Levitation only when detached — pinned mode is rock-solid on placeholder
@@ -491,10 +545,19 @@ export function initThreeScene() {
         const levTiltX = Math.sin(time * 0.5) * 0.03 * levAmount;
         const levTiltZ = Math.cos(time * 0.7) * 0.02 * levAmount;
 
-        mainGroup.scale.setScalar(smoothScale);
-        mainGroup.position.set(smoothX, smoothY + levY, 0);
+        // Exit phase: slide up + scale down as Process section approaches
+        const ex = exitState.progress;
+        const exitY = ex * 5;       // move up in world units
+        const exitScale = 1 - ex * 0.4; // scale down to 60%
+
+        mainGroup.scale.setScalar(smoothScale * exitScale);
+        mainGroup.position.set(smoothX, smoothY + levY + exitY, 0);
         mainGroup.rotation.x = levTiltX;
         mainGroup.rotation.z = levTiltZ;
+
+        // Hide completely when exit animation done
+        if (ex >= 1) { mainGroup.visible = false; }
+        else if (t > 0 || ex === 0) { mainGroup.visible = true; }
 
         // Update hit bounds every 3rd frame (saves traversing scene graph)
         if (++hitBoundsCounter >= 3) {

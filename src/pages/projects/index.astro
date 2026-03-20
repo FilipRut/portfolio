@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const projects = (await getCollection('projects'))
+  .filter(p => !p.data.draft)
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout>
+  <section class="projects-page">
+    <header class="projects-header">
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1>Projects</h1>
+      <p class="projects-subtitle">Selected work from the past years</p>
+    </header>
+
+    <div class="projects-grid">
+      {projects.map(project => (
+        <a href={`/projects/${project.id}`} class="project-card">
+          <div class="project-cover">
+            <img
+              src={project.data.cover}
+              alt={project.data.title}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div class="project-info">
+            <div class="project-meta">
+              {project.data.client && <span class="project-client">{project.data.client}</span>}
+              {project.data.company && <span class="project-company">@ {project.data.company}</span>}
+              <span class="project-year">{project.data.year}</span>
+            </div>
+            <h2 class="project-title">{project.data.title}</h2>
+            <p class="project-desc">{project.data.description}</p>
+            <div class="project-tags">
+              {project.data.tags.map(tag => (
+                <span class="project-tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .projects-page {
+    min-height: 100vh;
+    background: #fafafa;
+    padding: clamp(1.5rem, 1rem + 2vw, 4rem);
+  }
+
+  .projects-header {
+    max-width: 1200px;
+    margin: 0 auto clamp(2rem, 1.5rem + 2vw, 4rem);
+  }
+
+  .back-link {
+    display: inline-block;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.7rem + 0.2vw, 0.9rem);
+    color: rgba(0, 0, 0, 0.5);
+    text-decoration: none;
+    margin-bottom: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    transition: color 0.2s;
+  }
+
+  .back-link:hover { color: rgba(0, 0, 0, 0.85); }
+
+  .projects-header h1 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(2rem, 1.5rem + 2.5vw, 4rem);
+    font-weight: 500;
+    color: #171717;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .projects-subtitle {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.9rem, 0.8rem + 0.3vw, 1.1rem);
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.5rem;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+    gap: clamp(1.5rem, 1rem + 1.5vw, 2.5rem);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1rem);
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .project-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .project-cover {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #e5e5e5;
+  }
+
+  .project-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .project-card:hover .project-cover img {
+    transform: scale(1.03);
+  }
+
+  .project-info {
+    padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .project-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.15vw, 0.8rem);
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .project-client { font-weight: 500; }
+
+  .project-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.1rem, 1rem + 0.3vw, 1.35rem);
+    font-weight: 500;
+    color: #171717;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  .project-desc {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.75rem + 0.15vw, 0.9rem);
+    color: rgba(0, 0, 0, 0.55);
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+  }
+
+  .project-tag {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.65rem, 0.6rem + 0.1vw, 0.75rem);
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.5);
+  }
+</style>

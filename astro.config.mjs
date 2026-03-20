@@ -1,10 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-
+// import cloudflare from '@astrojs/cloudflare'; // temporarily disabled — miniflare hangs in dev
 import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  // adapter: cloudflare(),
   vite: {
     plugins: [tailwindcss()],
     build: {

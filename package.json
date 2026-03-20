@@ -12,6 +12,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^13.1.2",
     "@dimforge/rapier3d-compat": "^0.19.3",
     "@tailwindcss/vite": "^4.2.1",
     "@types/three": "^0.183.1",

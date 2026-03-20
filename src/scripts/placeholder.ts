@@ -43,13 +43,17 @@ export function initPlaceholder(promptInput: HTMLTextAreaElement) {
         textEl.style.lineHeight = `${numericLH}px`;
         cursorEl.style.height = `${Math.round(numericLH * 0.55)}px`;
 
-        // Clip overlay so placeholder text never overlaps the prompt bubbles + send button
-        if (overlayBottom) {
+        // Clip overlay only in collapsed pill mode (single-line, buttons inline).
+        // In expanded mode the buttons sit in a separate row below — text can use full width.
+        const isCollapsed = parseFloat(style.height) < 60;
+        if (overlayBottom && isCollapsed) {
             const bubbles = overlayBottom.querySelector('.prompt-bubbles') as HTMLElement | null;
             const sendBtn = overlayBottom.querySelector('.prompter-send') as HTMLElement | null;
             const gap = parseFloat(getComputedStyle(document.documentElement).fontSize);
             const contentWidth = (bubbles?.offsetWidth ?? 0) + (sendBtn?.offsetWidth ?? 0) + gap * 2;
             overlay.style.right = `${contentWidth}px`;
+        } else {
+            overlay.style.right = '0px';
         }
     }
 
