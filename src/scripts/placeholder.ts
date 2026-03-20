@@ -33,7 +33,7 @@ export function initPlaceholder(promptInput: HTMLTextAreaElement) {
         const fontSize = style.fontSize;
         const taLineHeight = style.lineHeight;
 
-        // Use textarea's actual line-height (e.g. '36px' in pill, or ratio in expanded)
+        // Use textarea's actual line-height (e.g. '44px' in pill, or ratio in expanded)
         const numericLH = taLineHeight.endsWith('px')
             ? parseFloat(taLineHeight)
             : parseFloat(fontSize) * 1.6;
@@ -42,16 +42,26 @@ export function initPlaceholder(promptInput: HTMLTextAreaElement) {
         textEl.style.fontSize = fontSize;
         textEl.style.lineHeight = `${numericLH}px`;
         cursorEl.style.height = `${Math.round(numericLH * 0.55)}px`;
+
+        // Clip overlay so placeholder text never overlaps the prompt bubbles + send button
+        if (overlayBottom) {
+            const bubbles = overlayBottom.querySelector('.prompt-bubbles') as HTMLElement | null;
+            const sendBtn = overlayBottom.querySelector('.prompter-send') as HTMLElement | null;
+            const gap = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const contentWidth = (bubbles?.offsetWidth ?? 0) + (sendBtn?.offsetWidth ?? 0) + gap * 2;
+            overlay.style.right = `${contentWidth}px`;
+        }
     }
 
     function updateShift() {
-        if (!overlayBottom) return;
-        const availableWidth = overlay.clientWidth - overlayBottom.clientWidth;
+        // overlay.clientWidth is already clipped by syncPosition (right = buttons width)
+        // so it represents the actual available space for placeholder text
+        const availableWidth = overlay.clientWidth;
         const trackWidth = track.scrollWidth;
-        const padLeft = parseFloat(window.getComputedStyle(promptInput).paddingLeft);
 
         if (trackWidth > availableWidth && availableWidth > 0) {
-            const overflow = trackWidth - availableWidth + padLeft;
+            // Shift track left so the end (currently typed word) stays visible
+            const overflow = trackWidth - availableWidth;
             track.style.transform = `translateX(-${overflow}px)`;
         } else {
             track.style.transform = '';
@@ -71,13 +81,10 @@ export function initPlaceholder(promptInput: HTMLTextAreaElement) {
         track.style.transform = '';
     }
 
-    // Recalculate shift on scroll (GSAP changes padding during animations)
-    window.addEventListener('scroll', () => {
-        if (isAnimating) {
-            syncPosition();
-            updateShift();
-        }
-    }, { passive: true });
+    // Recalculate on GSAP layout changes (collapse/expand transitions)
+    // Using ResizeObserver instead of scroll listener — fires only when textarea actually changes size
+    const resObs = new ResizeObserver(() => { if (isAnimating) { syncPosition(); updateShift(); } });
+    resObs.observe(promptInput);
 
     function typePlaceholder() {
         // If user has typed anything, stop the animation and clear placeholder

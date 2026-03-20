@@ -5,7 +5,7 @@ interface Props {
 	title?: string;
 }
 
-const { title = "Filip Rut – Lead UX/UI Designer" } = Astro.props;
+const { title = "Filip Rut – Lead AI UX/UI Designer" } = Astro.props;
 ---
 
 <html lang="pl">
@@ -15,10 +15,22 @@ const { title = "Filip Rut – Lead UX/UI Designer" } = Astro.props;
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content="Filip Rut – Lead AI UX/UI Designer & Webflow developer. 10+ years crafting high-quality digital products, design systems and AI-driven interfaces." />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content="Lead AI UX/UI Designer & Webflow developer. 10+ years crafting high-quality digital products, design systems and AI-driven interfaces." />
+		<meta property="og:type" content="website" />
+		<meta property="og:image" content="/og-image.png" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content="Lead AI UX/UI Designer & Webflow developer. 10+ years crafting high-quality digital products, design systems and AI-driven interfaces." />
+		<link rel="canonical" href="https://filiprut.com/" />
 		<title>{title}</title>
+		<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+		<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,400&display=swap" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+		<noscript><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" /></noscript>
 	</head>
 	<body class="m-0 p-0 font-['Inter_Tight',sans-serif] bg-white">
 		<slot />

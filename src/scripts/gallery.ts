@@ -115,56 +115,42 @@ export function initHeroGallery(vh: number, isMobile: boolean) {
     }
 
     if (!isMobile) {
-        // Desktop: two-phase time-slow + parallax
-        // Time slows — slideTl phase (prompter slides to center): speed 1 → 0.1
+        // Unified scroll handler — time-slow + parallax in one ScrollTrigger per phase
+        let lastSpeed = 1;
+
+        function setSpeed(speed: number) {
+            if (Math.abs(speed - lastSpeed) < 0.01) return; // skip tiny changes
+            lastSpeed = speed;
+            if (frostTl) frostTl.timeScale(speed);
+            for (let i = 0; i < photoTls.length; i++) photoTls[i].timeScale(speed);
+        }
+
+        // Phase 1: prompter slides to center — gallery slows down
         ScrollTrigger.create({
             trigger: '#scroll-wrapper',
             start: '0px top',
             end: `${vh}px top`,
-            scrub: 0.3,
             onUpdate(self) {
-                const speed = gsap.utils.interpolate(1, 0.1, self.progress);
-                if (frostTl) frostTl.timeScale(speed);
-                photoTls.forEach(tl => tl.timeScale(speed));
+                setSpeed(gsap.utils.interpolate(1, 0.1, self.progress));
             },
-            onLeaveBack() {
-                if (frostTl) frostTl.timeScale(1);
-                photoTls.forEach(tl => tl.timeScale(1));
-            },
+            onLeaveBack() { setSpeed(1); },
         });
 
-        // Time slows — collapseTl phase (prompter collapses to top): speed 0.1 → 1
-        ScrollTrigger.create({
-            trigger: '#scroll-wrapper',
-            start: `${vh}px top`,
-            end: `${vh * 2}px top`,
-            scrub: 0.3,
-            onUpdate(self) {
-                const speed = gsap.utils.interpolate(0.1, 1, self.progress);
-                if (frostTl) frostTl.timeScale(speed);
-                photoTls.forEach(tl => tl.timeScale(speed));
-            },
-            onLeaveBack() {
-                if (frostTl) frostTl.timeScale(1);
-                photoTls.forEach(tl => tl.timeScale(1));
+        // Phase 2: prompter collapses + parallax — gallery speeds back up
+        const parallaxTl = gsap.timeline({
+            scrollTrigger: {
+                trigger: '#scroll-wrapper',
+                start: `${vh}px top`,
+                end: `${vh * 2}px top`,
+                scrub: 0.3,
+                onUpdate(self) {
+                    setSpeed(gsap.utils.interpolate(0.1, 1, self.progress));
+                },
+                onLeaveBack() { setSpeed(0.1); },
             },
         });
-
-        // Parallax on hero exit — gallery up, RUT down
-        ScrollTrigger.create({
-            trigger: '#scroll-wrapper',
-            start: `${vh}px top`,
-            end: `${vh * 2}px top`,
-            scrub: 0.3,
-            onUpdate(self) {
-                gsap.set(photoEls, { y: -70 * self.progress });
-                gsap.set('.hero-letter', { y: `${12 * self.progress}%` });
-            },
-            onLeaveBack() {
-                gsap.set(photoEls, { y: 0 });
-                gsap.set('.hero-letter', { y: '0%' });
-            },
-        });
+        parallaxTl.to(photoEls, { y: -70, duration: 1 }, 0);
+        parallaxTl.to('.hero-letter', { y: '12%', duration: 1 }, 0);
     }
 
     if (heroPauseBtn && heroPauseIcon && heroPlayIcon) {

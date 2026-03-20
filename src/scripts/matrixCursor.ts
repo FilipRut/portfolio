@@ -23,14 +23,20 @@ export function initMatrixCursor(promptInput: HTMLTextAreaElement) {
         const xOffset = measureCtx!.measureText(lineText).width;
         const spaceWidth = measureCtx!.measureText('\u00A0').width;
         const charWidth = measureCtx!.measureText('M').width;
-        const lineHeight = parseFloat(style.fontSize) * 1.6;
+        const fontSize = parseFloat(style.fontSize);
+        const rawLH = style.lineHeight === 'normal'
+            ? fontSize * 1.6
+            : parseFloat(style.lineHeight);
+        const lineHeight = rawLH;
+        const cursorH = fontSize * 1.35;            // cursor height based on font, not line-height
+        const cursorY = (lineHeight - cursorH) / 2;  // vertically center in line
         const padTop = parseFloat(style.paddingTop);
         const padLeft = parseFloat(style.paddingLeft);
 
         matrixCursorEl!.style.width = Math.round(charWidth * 0.55) + 'px';
-        matrixCursorEl!.style.height = Math.round(lineHeight * 0.85) + 'px';
+        matrixCursorEl!.style.height = Math.round(cursorH) + 'px';
         matrixCursorEl!.style.left = Math.round(padLeft + xOffset + spaceWidth) + 'px';
-        matrixCursorEl!.style.top = Math.round(padTop + linesBefore * lineHeight + lineHeight * 0.075 - ta.scrollTop) + 'px';
+        matrixCursorEl!.style.top = Math.round(padTop + linesBefore * lineHeight + cursorY - ta.scrollTop) + 'px';
         matrixCursorEl!.style.display = 'block';
     }
 

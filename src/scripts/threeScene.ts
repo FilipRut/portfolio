@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import gsap from 'gsap';
 import 'gsap/ScrollTrigger';
@@ -16,8 +18,8 @@ const PHYS = {
     GRAVITY:        -9.82,
     LINEAR_DAMPING:  2.0,
     ANGULAR_DAMPING: 8.0,
-    MOUSE_FORCE:     0.3,
-    INERTIA_FORCE:   0.5,
+    MOUSE_FORCE:     0.8,
+    INERTIA_FORCE:   1.5,
     FRICTION:        0.0,
     RESTITUTION:     0.0,
 };
@@ -42,20 +44,58 @@ export function initThreeScene() {
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // ── Renderer: photorealistic PBR ──
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = false;
     globalContainer.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-    const ml = new THREE.DirectionalLight(0xffffff, 2); ml.position.set(5, 8, 5); scene.add(ml);
-    const fl = new THREE.DirectionalLight(0xffffff, 0.8); fl.position.set(-3, 2, -3); scene.add(fl);
+    // ── Environment: RoomEnvironment HDRI (studio reflections on acrylic) ──
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmremGenerator.dispose();
+
+    // ── Lighting: soft diffused + strong backlight ──
+
+    // Ambient — slightly higher for softer overall fill
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    // BACKLIGHT — stronger, further back — refracts through resin for inner glow
+    const backLight = new THREE.DirectionalLight(0xffffff, 6.0);
+    backLight.position.set(-2, 5, -8);
+    backLight.castShadow = false;
+    scene.add(backLight);
+
+    // KEY LIGHT — RectAreaLight for soft, wide panel reflections (not sharp points)
+    const keyLight = new THREE.RectAreaLight(0xffeedd, 2.5, 4, 4);
+    keyLight.position.set(5, 4, 3);
+    keyLight.lookAt(0, 0, 0);
+    scene.add(keyLight);
+
+    // FILL — RectAreaLight from opposite side, cool
+    const fillLight = new THREE.RectAreaLight(0xddeeff, 1.5, 3, 3);
+    fillLight.position.set(-4, 2, 2);
+    fillLight.lookAt(0, 0, 0);
+    scene.add(fillLight);
+
+    // RIM — SpotLight with max penumbra for soft edge glow
+    const rimLight = new THREE.SpotLight(0xffffff, 4.0);
+    rimLight.position.set(-5, 0, 2);
+    rimLight.angle = Math.PI / 4;
+    rimLight.penumbra = 1.0;
+    scene.add(rimLight);
 
     const mainGroup = new THREE.Group();
     scene.add(mainGroup);
     camera.position.z = 10;
 
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
     const loader = new GLTFLoader();
-    const basePath = '/assets/models/parts-clean/';
+    loader.setDRACOLoader(dracoLoader);
+    const basePath = '/assets/models/parts-opt/';
 
     let world: RAPIER.World;
     let carabinerBody: RAPIER.RigidBody;
@@ -106,7 +146,7 @@ export function initThreeScene() {
         }
     }
 
-    RAPIER.init().then(() => {
+    RAPIER.init({}).then(() => {
         world = new RAPIER.World({ x: 0, y: PHYS.GRAVITY, z: 0 });
 
         const ANCHOR_Y = 0.89;
@@ -215,7 +255,7 @@ export function initThreeScene() {
         }
 
         // ── Load visuals ──
-        const TOTAL = 1 + RINGS.length + 1; // carabiner + rings + charm
+        const TOTAL = 1 + RINGS.length + 1; // carabiner + rings (from single load) + charm
         let loadCount = 0;
         function onLoaded() {
             if (++loadCount === TOTAL) {
@@ -232,35 +272,76 @@ export function initThreeScene() {
             onLoaded();
         });
 
-        // Orange charm visual — peg is ALREADY at top in original mesh (Y≈0.012)
-        // No flip needed! Original orientation: peg up, cube body below.
+        // Orange charm — translucent tinted resin (Beer-Lambert volumetric absorption)
         loader.load(basePath + 'Orange.glb', (gltf) => {
             charmGroup = new THREE.Group();
             const mesh = gltf.scene;
 
-            // Original center at Y=-0.456, shift up so group origin = body center
+            // ── Polished acrylic — beer-lambert orange resin ──
+            const resinMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                transmission: 1.0,
+                opacity: 1.0,
+                transparent: true,
+                roughness: 0.35,            // frosted — soft diffused reflections
+                metalness: 0.0,
+                ior: 1.5,
+                thickness: 2.5,
+                attenuationColor: new THREE.Color('#ff7700'),
+                attenuationDistance: 1.5,
+                dispersion: 1.5,
+                side: THREE.DoubleSide,
+            });
+
+            // Apply material — peg is already centered in original mesh
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (m.isMesh) m.material = resinMat;
+            });
+
+
+            // ── Inner glowing core (cube within cube) ──
+            // Frosted transmission box inside the resin shell.
+            // Sits inside the mesh — moves and rotates with it.
+            const innerGeo = new THREE.BoxGeometry(0.5, 0.55, 0.22);
+            const innerMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffcc00,
+                roughness: 0.6,
+                transmission: 0.7,
+                transparent: true,
+                thickness: 1.0,
+                ior: 1.4,
+                attenuationColor: new THREE.Color('#ff8800'),
+                attenuationDistance: 1.0,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            });
+            const innerCore = new THREE.Mesh(innerGeo, innerMat);
+            innerCore.position.set(0, -0.48, 0.05);
+            mesh.add(innerCore);
+
+            // PointLight inside — feeds the glow through outer shell
+            const innerGlow = new THREE.PointLight(0xffaa44, 2.5, 2.0, 2);
+            innerGlow.position.set(0, -0.48, 0.05);
+            mesh.add(innerGlow);
+
             mesh.position.y = 0.456;
-            // Nudge so peg hole aligns with ring center
-            mesh.position.x = -0.025;
+            mesh.position.z = -0.093;
 
             charmGroup.add(mesh);
             mainGroup.add(charmGroup);
             onLoaded();
         });
 
-        // Ring visuals — CircleBig.glb at different scales, alternating orientation
-        RINGS.forEach((ring, i) => {
-            loader.load(basePath + 'CircleBig.glb', (gltf) => {
+        // Ring visuals — load CircleBig.glb once, clone for each ring
+        loader.load(basePath + 'CircleBig.glb', (gltf) => {
+            RINGS.forEach((ring, i) => {
                 const group = new THREE.Group();
-                const mesh = gltf.scene;
+                const mesh = gltf.scene.clone();
 
-                // Original ring is in XY plane, center at Y=0.41
-                // YZ plane: rotate 90° around Y → perpendicular to camera
-                // XY plane: no rotation needed → faces camera
                 if (ring.plane === 'yz') {
                     mesh.rotation.y = Math.PI / 2;
                 }
-                // Center offset always in Y (both planes are vertical)
                 mesh.position.y = -0.41 * ring.scale;
                 mesh.scale.setScalar(ring.scale);
 
@@ -272,32 +353,47 @@ export function initThreeScene() {
         });
     });
 
-    // ── Projection ──
+    // ── Projection (pre-allocated vectors to avoid per-frame GC) ──
+    const _projV = new THREE.Vector3();
+    const _projResult = new THREE.Vector3();
     function screenToWorld(x: number, y: number) {
-        const v = new THREE.Vector3((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1, 0.5);
-        v.unproject(camera); v.sub(camera.position).normalize();
-        return camera.position.clone().add(v.multiplyScalar(-camera.position.z / v.z));
+        _projV.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1, 0.5);
+        _projV.unproject(camera); _projV.sub(camera.position).normalize();
+        return _projResult.copy(camera.position).add(_projV.multiplyScalar(-camera.position.z / _projV.z));
     }
 
     const animState = { progress: 0 };
-    gsap.to(animState, { progress: 1, scrollTrigger: { trigger: '#intro', start: 'top top', end: 'bottom bottom', scrub: 0.8 } });
+    gsap.to(animState, { progress: 1, scrollTrigger: { trigger: '#intro', start: 'top top', end: 'bottom bottom', scrub: 0.15 } });
 
     let mouseX = 0, mouseY = 0;
     window.addEventListener('mousemove', (e) => { mouseX = (e.clientX / window.innerWidth) - 0.5; mouseY = (e.clientY / window.innerHeight) - 0.5; });
 
     let isDragging = false, dragRotY = 0, dragVelocity = 0, lastDragX = 0, isHovering = false, touchActive = false, touchStartX = 0;
 
+    // Cached screen-space bounding rect of the 3D model, updated once per frame in animate()
+    let hitX0 = 0, hitY0 = 0, hitX1 = 0, hitY1 = 0;
+    const _hitBox = new THREE.Box3();
+    const _hitCorner = new THREE.Vector3();
+    function updateHitBounds() {
+        if (!modelLoaded) return;
+        _hitBox.setFromObject(mainGroup);
+        const mn = _hitBox.min, mx = _hitBox.max;
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (let i = 0; i < 8; i++) {
+            _hitCorner.set(i & 1 ? mx.x : mn.x, i & 2 ? mx.y : mn.y, i & 4 ? mx.z : mn.z);
+            _hitCorner.project(camera);
+            const sx = (_hitCorner.x * .5 + .5) * innerWidth;
+            const sy = (-_hitCorner.y * .5 + .5) * innerHeight;
+            x0 = Math.min(x0, sx); y0 = Math.min(y0, sy);
+            x1 = Math.max(x1, sx); y1 = Math.max(y1, sy);
+        }
+        const px = (x1 - x0) * .2, py = (y1 - y0) * .2;
+        hitX0 = x0 - px; hitY0 = y0 - py; hitX1 = x1 + px; hitY1 = y1 + py;
+    }
+
     function hitTest(cx: number, cy: number): boolean {
         if (!modelLoaded) return false;
-        const box = new THREE.Box3().setFromObject(mainGroup);
-        const toS = (v: THREE.Vector3) => { v.project(camera); return { x: (v.x * .5 + .5) * innerWidth, y: (-v.y * .5 + .5) * innerHeight }; };
-        const mn = box.min, mx = box.max;
-        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-        [new THREE.Vector3(mn.x,mn.y,mn.z),new THREE.Vector3(mx.x,mn.y,mn.z),new THREE.Vector3(mn.x,mx.y,mn.z),new THREE.Vector3(mx.x,mx.y,mn.z),
-         new THREE.Vector3(mn.x,mn.y,mx.z),new THREE.Vector3(mx.x,mn.y,mx.z),new THREE.Vector3(mn.x,mx.y,mx.z),new THREE.Vector3(mx.x,mx.y,mx.z)]
-        .forEach(c => { const s = toS(c); x0 = Math.min(x0,s.x); y0 = Math.min(y0,s.y); x1 = Math.max(x1,s.x); y1 = Math.max(y1,s.y); });
-        const px = (x1-x0)*.2, py = (y1-y0)*.2;
-        return cx >= x0-px && cx <= x1+px && cy >= y0-py && cy <= y1+py;
+        return cx >= hitX0 && cx <= hitX1 && cy >= hitY0 && cy <= hitY1;
     }
 
     window.addEventListener('mousedown', (e) => { if (hitTest(e.clientX,e.clientY)) { isDragging=true; lastDragX=e.clientX; dragVelocity=0; document.body.style.cursor='grabbing'; e.preventDefault(); } });
@@ -308,6 +404,15 @@ export function initThreeScene() {
     window.addEventListener('touchmove', (e) => { if (touchActive&&e.touches.length===2) { const cx=(e.touches[0].clientX+e.touches[1].clientX)/2; const d=cx-touchStartX; dragRotY+=d*.006; dragVelocity=d*.006; touchStartX=cx; } }, { passive: true });
     window.addEventListener('touchend', () => { touchActive=false; });
 
+    // Smoothed position/scale — always lerp, never snap (except first frame)
+    let smoothX = 0, smoothY = 0, smoothScale = 0.34;
+    let firstFrame = true;
+
+    // No anchor — object follows placeholder live when pinned, detaches at 30%
+
+    // Hit bounds throttle — every 3rd frame is enough for hover detection
+    let hitBoundsCounter = 0;
+
     function animate() {
         requestAnimationFrame(animate);
         if (!modelLoaded || !world) return;
@@ -315,14 +420,13 @@ export function initThreeScene() {
         const time = Date.now() * 0.001;
 
         if (!isDragging && !touchActive) { dragRotY += dragVelocity; dragVelocity *= 0.95; if (Math.abs(dragVelocity) < .0001) dragVelocity = 0; }
-        const baseRotY = -Math.PI / 4, breathe = Math.sin(time * .15) * .06;
-        const tgtY = baseRotY + breathe + (isDragging ? 0 : mouseX * .15) + dragRotY;
-        mainGroup.rotation.y += (tgtY - mainGroup.rotation.y) * (isDragging ? .15 : .015);
+        // Idle spin: ramps in after detach (progress > 0.3), always apply drag
+        const spinAmount = animState.progress <= 0.3 ? 0 : Math.min((animState.progress - 0.3) / 0.2, 1);
+        mainGroup.rotation.y += 0.0013 * spinAmount + dragVelocity;
 
         mainRotVelocity = mainGroup.rotation.y - prevMainRotY;
         prevMainRotY = mainGroup.rotation.y;
 
-        // Impulse on charm (bottom of chain — cascades up through joints)
         if (charmBody) {
             const ix = (mouseX * PHYS.MOUSE_FORCE - mainRotVelocity * PHYS.INERTIA_FORCE) * (1/60);
             const iz = mouseY * PHYS.MOUSE_FORCE * (1/60);
@@ -350,21 +454,63 @@ export function initThreeScene() {
         if (charmBody && charmGroup) {
             const p = charmBody.translation();
             charmGroup.position.set(p.x, p.y, p.z);
-            // Counter-rotate mainGroup so charm always faces camera
-            charmGroup.rotation.y = -mainGroup.rotation.y;
+            const lastRingBody = chainBodies[chainBodies.length - 1];
+            if (lastRingBody) {
+                const r = lastRingBody.rotation();
+                charmGroup.quaternion.set(r.x, r.y, r.z, r.w);
+            }
         }
 
+        // Live placeholder position in world space (scrolls with document)
         const rect = placeholder!.getBoundingClientRect();
         const sp = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        const sc = gsap.utils.interpolate(0.34, 1.47, animState.progress);
-        mainGroup.scale.set(sc, sc, sc);
-        mainGroup.position.set(
-            gsap.utils.interpolate(sp.x, 0, animState.progress),
-            gsap.utils.interpolate(sp.y, 1.8, animState.progress), 0);
+
+        // Remap progress: 0–30% of scroll = follow placeholder (t=0), 30–100% = fly to center (t 0→1)
+        const DETACH_AT = 0.2;
+        const t = animState.progress <= DETACH_AT ? 0 : (animState.progress - DETACH_AT) / (1 - DETACH_AT);
+
+        const tgtScale = gsap.utils.interpolate(0.34, 1.47, t);
+        const tgtX = gsap.utils.interpolate(sp.x, 0, t);
+        const tgtYPos = gsap.utils.interpolate(sp.y, 1.8, t);
+
+        // Lerp speed blends smoothly: fast (0.5) when pinned → slow (0.1) when fully detached
+        // No hard branch — eliminates snap/jump at the transition boundary
+        const lerp = 0.5 - t * 0.4; // t=0 → 0.5, t=1 → 0.1
+        if (firstFrame) {
+            smoothX = tgtX; smoothY = tgtYPos; smoothScale = tgtScale;
+            firstFrame = false;
+        } else {
+            smoothX += (tgtX - smoothX) * lerp;
+            smoothY += (tgtYPos - smoothY) * lerp;
+            smoothScale += (tgtScale - smoothScale) * lerp;
+        }
+
+        // Levitation only when detached — pinned mode is rock-solid on placeholder
+        const levAmount = Math.min(t * 3, 1); // 0 when pinned, ramps to 1 over first ~33% of detach
+        const levY = Math.sin(time * 0.8) * 0.04 * levAmount;
+        const levTiltX = Math.sin(time * 0.5) * 0.03 * levAmount;
+        const levTiltZ = Math.cos(time * 0.7) * 0.02 * levAmount;
+
+        mainGroup.scale.setScalar(smoothScale);
+        mainGroup.position.set(smoothX, smoothY + levY, 0);
+        mainGroup.rotation.x = levTiltX;
+        mainGroup.rotation.z = levTiltZ;
+
+        // Update hit bounds every 3rd frame (saves traversing scene graph)
+        if (++hitBoundsCounter >= 3) {
+            hitBoundsCounter = 0;
+            updateHitBounds();
+        }
 
         renderer.render(scene, camera);
+
     }
     animate();
 
-    window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+    window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+        firstFrame = true; // re-snap position on resize
+    });
 }
