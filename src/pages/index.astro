@@ -5,6 +5,7 @@ import Prompter from '../components/Prompter.astro';
 import ChatOverlay from '../components/ChatOverlay.astro';
 import Intro from '../components/Intro.astro';
 import Process from '../components/Process.astro';
+import AboutMe from '../components/AboutMe.astro';
 import { getCollection } from 'astro:content';
 
 const projects = (await getCollection('projects'))
@@ -17,9 +18,10 @@ const projects = (await getCollection('projects'))
 		company: p.data.company ?? '',
 		year: p.data.year,
 		heroImage: p.data.heroImage ?? p.data.cover,
+		cover: p.data.cover,
+		description: p.data.description,
+		tags: p.data.tags ?? [],
 	}));
-
-const featuredProjects = projects.slice(0, 6);
 ---
 
 <BaseLayout>
@@ -31,14 +33,42 @@ const featuredProjects = projects.slice(0, 6);
 	<!-- Global Three.js Container for transitions -->
 	<div id="global-three-container" role="img" aria-label="Interactive 3D keychain animation"></div>
 
+	<!-- Fixed logo — appears after hero, letters draw on/off via stroke masks -->
+	<a id="site-logo" href="/" class="site-logo" aria-label="RUT — back to top">
+		<svg viewBox="0 0 207 100" xmlns="http://www.w3.org/2000/svg">
+			<defs>
+				<!-- R mask: stem bottom→top, bowl clockwise, leg diagonal -->
+				<mask id="m-r">
+					<path class="draw-r1" d="M 11.35 82 V 9" stroke="white" stroke-width="18" stroke-linecap="round" fill="none"/>
+					<path class="draw-r2" d="M 14 14 L 38 14 Q 51.5 14 51.5 32 Q 51.5 50 38 50 L 12 50" stroke="white" stroke-width="18" stroke-linecap="round" fill="none"/>
+					<path class="draw-r3" d="M 35.7 49 L 53.5 82" stroke="white" stroke-width="20" stroke-linecap="round" fill="none"/>
+				</mask>
+				<!-- U mask: top-left → down → arc → up to top-right -->
+				<mask id="m-u">
+					<path class="draw-u" d="M 79.65 9.25 V 57 Q 79.65 78 103 78 Q 126.5 78 126.5 57 V 9.25" stroke="white" stroke-width="18" stroke-linecap="round" fill="none"/>
+				</mask>
+				<!-- T mask: horizontal bar left→right, then vertical top→bottom -->
+				<mask id="m-t">
+					<path class="draw-t1" d="M 148 14 H 205" stroke="white" stroke-width="16" stroke-linecap="round" fill="none"/>
+					<path class="draw-t2" d="M 176.3 14 V 82" stroke="white" stroke-width="18" stroke-linecap="round" fill="none"/>
+				</mask>
+			</defs>
+			<!-- Filled letter paths from Inter Tight 500, revealed by animated masks -->
+			<path class="logo-letter" mask="url(#m-r)" d="M16.85 82L5.86 82L5.86 9.25L31.84 9.25Q40.28 9.25 45.85 12.15Q51.42 15.06 54.20 20.21Q56.98 25.36 56.98 32.10L56.98 32.10Q56.98 38.74 54.20 43.82Q51.42 48.89 45.83 51.68Q40.23 54.46 31.74 54.46L31.74 54.46L12.16 54.46L12.16 45.09L30.71 45.09Q36.13 45.09 39.48 43.52Q42.82 41.96 44.36 39.08Q45.90 36.20 45.90 32.10L45.90 32.10Q45.90 27.95 44.34 24.94Q42.77 21.94 39.43 20.31Q36.08 18.67 30.66 18.67L30.66 18.67L16.85 18.67L16.85 82ZM59.77 82L47.27 82L29.64 49.14L41.80 49.14L59.77 82Z"/>
+			<path class="logo-letter" mask="url(#m-u)" d="M120.99 56.22L120.99 9.25L131.97 9.25L131.97 57.10Q131.97 64.71 128.39 70.60Q124.80 76.48 118.30 79.83Q111.81 83.17 103.07 83.17L103.07 83.17Q94.38 83.17 87.86 79.83Q81.34 76.48 77.75 70.60Q74.16 64.71 74.16 57.10L74.16 57.10L74.16 9.25L85.15 9.25L85.15 56.22Q85.15 61.15 87.32 64.98Q89.49 68.82 93.52 71.01Q97.55 73.21 103.07 73.21L103.07 73.21Q108.63 73.21 112.64 71.01Q116.64 68.82 118.82 64.98Q120.99 61.15 120.99 56.22L120.99 56.22Z"/>
+			<path class="logo-letter" mask="url(#m-t)" d="M170.83 18.67L148.08 18.67L148.08 9.25L204.43 9.25L204.43 18.67L181.77 18.67L181.77 82L170.83 82L170.83 18.67Z"/>
+		</svg>
+	</a>
+
 	<!-- Vignette spotlight — pojawia się gdy kompozer jest na środku -->
 	<div id="scene-vignette"></div>
 
 	<Hero />
 	<Prompter />
 	<ChatOverlay />
-	<Intro projects={featuredProjects} />
-	<Process />
+	<Intro projects={projects} />
+	<AboutMe />
+<Process />
 
 	<style is:global>
 		#global-three-container {
@@ -51,6 +81,41 @@ const featuredProjects = projects.slice(0, 6);
 			width: 100%;
 			height: 100%;
 		}
+		/* ── Fixed RUT logo ── */
+		.site-logo {
+			position: fixed;
+			top: clamp(1.25rem, 1rem + 0.5vw, 2rem);
+			left: clamp(1rem, 0.5rem + 1vw, 4rem);
+			z-index: 50;
+			width: clamp(3.2rem, 2.8rem + 1vw, 4.5rem);
+			text-decoration: none;
+			pointer-events: none;
+		}
+		.site-logo.is-active {
+			pointer-events: auto;
+		}
+		.site-logo svg {
+			display: block;
+			width: 100%;
+			height: auto;
+			overflow: visible;
+			opacity: 0;
+		}
+		.site-logo.is-active svg {
+			opacity: 1;
+		}
+		.logo-letter {
+			fill: #171717;
+		}
+		.site-logo.is-dark .logo-letter {
+			fill: #fff;
+			transition: fill 0.4s ease;
+		}
+		/* Mask draw paths — hidden by default via strokeDashoffset set in JS */
+		[class^="draw-"] {
+			vector-effect: non-scaling-stroke;
+		}
+
 		#scene-vignette {
 			position: fixed;
 			inset: 0;

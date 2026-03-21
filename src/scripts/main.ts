@@ -5,6 +5,7 @@ import { initMatrixCursor } from './matrixCursor';
 import { initPlaceholder } from './placeholder';
 import { initHeroGallery } from './gallery';
 import { initBuddy } from './buddy';
+import { initMapTooltip } from './map-tooltip';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -57,6 +58,7 @@ const T = {
 
 function init() {
     initClock();
+    initMapTooltip();
 
     /* ── HERO ENTRANCE ── */
     const alreadyScrolled = window.scrollY > 50;
@@ -262,6 +264,65 @@ function init() {
         }
     );
 
+    /* ── Show more — seamless transition to /projects ── */
+    const showMoreBtn = document.getElementById('show-more-btn');
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', async () => {
+            showMoreBtn.style.pointerEvents = 'none';
+            showMoreBtn.style.opacity = '0.4';
+
+            // 1. Force keychain dramatic exit
+            try {
+                const { forceKeychainExit } = await import('./threeScene');
+                await forceKeychainExit();
+            } catch { /* 3D may not be loaded yet */ }
+
+            // 2. Fade out tiles + divider
+            const introProjects = document.getElementById('intro-projects');
+            if (introProjects) {
+                await gsap.to(introProjects, { opacity: 0, duration: 0.3, ease: 'power2.in' });
+            }
+            await gsap.to(showMoreBtn, { opacity: 0, duration: 0.15 });
+
+            // 3. Switch to expanded grid
+            const intro = document.getElementById('intro')!;
+            intro.classList.add('intro--expanded');
+            intro.style.minHeight = 'auto';
+
+            // 4. Collapse sections above the grid so it sits at the top
+            const scrollWrapper = document.getElementById('scroll-wrapper');
+            const introRow = document.querySelector<HTMLElement>('.intro-row');
+            const threeContainer = document.getElementById('global-three-container');
+            const sceneVignette = document.getElementById('scene-vignette');
+            const processSection = document.getElementById('process');
+
+            // Hide hero, 3D canvas, vignette, intro header row, process
+            [scrollWrapper, threeContainer, sceneVignette].forEach(el => {
+                if (el) el.style.display = 'none';
+            });
+            if (introRow) introRow.style.display = 'none';
+            if (processSection) processSection.style.display = 'none';
+
+            // Reset intro padding top to leave room for the fixed prompter pill
+            intro.style.paddingTop = 'clamp(4rem, 3rem + 2vw, 6rem)';
+
+            // Scroll to top instantly (grid is now at the top of the page)
+            window.scrollTo(0, 0);
+
+            // 5. Staggered reveal of grid cards
+            await gsap.fromTo('.grid-card',
+                { y: 30, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.55, stagger: 0.06, ease: 'power3.out' }
+            );
+
+            // 6. Push URL to /projects (no reload, no scroll jump)
+            history.pushState({ fromShowMore: true }, '', '/projects');
+
+            // 7. Refresh scroll triggers for new layout
+            ScrollTrigger.refresh();
+        });
+    }
+
     // Process section — staggered reveal
     gsap.fromTo('.process-el',
         { y: 30, opacity: 0 },
@@ -270,6 +331,7 @@ function init() {
             scrollTrigger: { trigger: '#process', start: 'top 75%', once: true },
         }
     );
+
 
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -588,6 +650,56 @@ function init() {
     chatCloseInline.addEventListener('click', () => exitChatMode());
     chatDim.addEventListener('click', () => exitChatMode());
 
+    /* ── Fixed RUT logo — GSAP stroke-mask draw animation ── */
+    const siteLogo = document.getElementById('site-logo');
+    if (siteLogo) {
+        // All mask skeleton strokes — hide them via full dashoffset
+        const drawPaths = siteLogo.querySelectorAll<SVGPathElement>('[class^="draw-"]');
+        drawPaths.forEach(p => {
+            const len = p.getTotalLength();
+            gsap.set(p, { attr: { 'stroke-dasharray': len + 1, 'stroke-dashoffset': len + 1 } });
+        });
+
+        const drawTl = gsap.timeline({ paused: true,
+            onStart: () => siteLogo.classList.add('is-active'),
+            onReverseComplete: () => siteLogo.classList.remove('is-active'),
+        });
+
+        // R — stem rises from bottom
+        drawTl.to('.draw-r1', { attr: { 'stroke-dashoffset': 0 }, duration: 0.35, ease: 'power2.inOut' }, 0);
+        // R — bowl traces clockwise from stem top
+        drawTl.to('.draw-r2', { attr: { 'stroke-dashoffset': 0 }, duration: 0.4, ease: 'power2.inOut' }, 0.18);
+        // R — diagonal leg snaps down
+        drawTl.to('.draw-r3', { attr: { 'stroke-dashoffset': 0 }, duration: 0.22, ease: 'power2.out' }, 0.48);
+        // U — single arc from top-left, down, around, up to top-right
+        drawTl.to('.draw-u', { attr: { 'stroke-dashoffset': 0 }, duration: 0.55, ease: 'power2.inOut' }, 0.1);
+        // T — horizontal bar sweeps left→right
+        drawTl.to('.draw-t1', { attr: { 'stroke-dashoffset': 0 }, duration: 0.28, ease: 'power2.inOut' }, 0.25);
+        // T — vertical stroke drops top→bottom
+        drawTl.to('.draw-t2', { attr: { 'stroke-dashoffset': 0 }, duration: 0.32, ease: 'power2.inOut' }, 0.42);
+
+        let logoVisible = false;
+
+        ScrollTrigger.create({
+            trigger: '#scroll-wrapper',
+            start: 'bottom top',
+            onEnter: () => {
+                if (!logoVisible) { logoVisible = true; drawTl.play(); }
+            },
+            onLeaveBack: () => {
+                if (logoVisible) { logoVisible = false; drawTl.reverse(); }
+            },
+        });
+
+        // If already scrolled past hero on load — show fully drawn
+        if (window.scrollY >= (document.getElementById('scroll-wrapper')?.offsetHeight ?? 0)) {
+            drawPaths.forEach(p => gsap.set(p, { attr: { 'stroke-dashoffset': 0 } }));
+            siteLogo.classList.add('is-active');
+            drawTl.progress(1);
+            logoVisible = true;
+        }
+    }
+
     // Background mode check — toggle light/dark prompter style
     const heroSection = document.getElementById('scroll-wrapper');
     const heroSectionHeight = heroSection ? heroSection.offsetHeight : 0;
@@ -619,6 +731,13 @@ function init() {
         }, { rootMargin: '600px 0px' }); // Trigger loading 600px before it enters viewport
         observer.observe(introSection);
     }
+
+    // Handle browser back from pushState /projects → reload homepage cleanly
+    window.addEventListener('popstate', (e) => {
+        if (location.pathname === '/' || location.pathname === '') {
+            location.reload();
+        }
+    });
 }
 
 if (document.readyState === 'loading') {

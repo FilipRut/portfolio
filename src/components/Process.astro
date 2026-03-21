@@ -13,49 +13,58 @@
             </h2>
         </div>
 
-        <!-- Process narrative steps -->
-        <div class="process-steps">
+        <!-- Layout: placeholder graphic + steps -->
+        <div class="process-layout">
 
-            <div class="process-step process-el">
-                <span class="step-number">01</span>
-                <div class="step-content">
-                    <h3 class="step-title">Listen before prompting</h3>
-                    <p class="step-desc">Every project starts with the same question — what problem are we actually solving? AI doesn't change that. It just makes the cost of being wrong lower and the speed of finding right higher.</p>
-                </div>
+            <!-- Placeholder block — ASCII graphic changes on step hover -->
+            <div class="process-placeholder" id="process-placeholder">
+                <canvas class="placeholder-canvas" id="placeholder-canvas"></canvas>
             </div>
 
-            <div class="process-step process-el">
-                <span class="step-number">02</span>
-                <div class="step-content">
-                    <h3 class="step-title">Think in systems, not screens</h3>
-                    <p class="step-desc">I map the full picture first — user flows, data architecture, edge cases. AI accelerates exploration of variants I wouldn't have time to sketch by hand. More paths tested, stronger decisions.</p>
-                </div>
-            </div>
+            <!-- Steps (original layout: number + title + description) -->
+            <div class="process-steps">
 
-            <div class="process-step process-el">
-                <span class="step-number">03</span>
-                <div class="step-content">
-                    <h3 class="step-title">Prototype at the speed of thought</h3>
-                    <p class="step-desc">From concept to interactive prototype in hours, not weeks. AI handles the repetitive scaffolding so I stay focused on the craft — the micro-interactions, the typography, the feeling.</p>
+                <div class="process-step process-el is-active" data-step="0">
+                    <span class="step-number">01</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Listen before prompting</h3>
+                        <p class="step-desc">Every project starts with the same question — what problem are we actually solving? AI doesn't change that. It just makes the cost of being wrong lower and the speed of finding right higher.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="process-step process-el">
-                <span class="step-number">04</span>
-                <div class="step-content">
-                    <h3 class="step-title">Validate with real signals</h3>
-                    <p class="step-desc">Beautiful doesn't mean useful. I test early, test often, and let data guide iteration. AI helps synthesize feedback faster — but the judgment call is always human.</p>
+                <div class="process-step process-el" data-step="1">
+                    <span class="step-number">02</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Think in systems, not screens</h3>
+                        <p class="step-desc">I map the full picture first — user flows, data architecture, edge cases. AI accelerates exploration of variants I wouldn't have time to sketch by hand. More paths tested, stronger decisions.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="process-step process-el">
-                <span class="step-number">05</span>
-                <div class="step-content">
-                    <h3 class="step-title">Ship and keep shaping</h3>
-                    <p class="step-desc">Design doesn't end at handoff. I stay close to code, close to users, close to the product. The best work evolves after launch — when reality meets intention.</p>
+                <div class="process-step process-el" data-step="2">
+                    <span class="step-number">03</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Prototype at the speed of thought</h3>
+                        <p class="step-desc">From concept to interactive prototype in hours, not weeks. AI handles the repetitive scaffolding so I stay focused on the craft — the micro-interactions, the typography, the feeling.</p>
+                    </div>
                 </div>
-            </div>
 
+                <div class="process-step process-el" data-step="3">
+                    <span class="step-number">04</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Validate with real signals</h3>
+                        <p class="step-desc">Beautiful doesn't mean useful. I test early, test often, and let data guide iteration. AI helps synthesize feedback faster — but the judgment call is always human.</p>
+                    </div>
+                </div>
+
+                <div class="process-step process-el" data-step="4">
+                    <span class="step-number">05</span>
+                    <div class="step-content">
+                        <h3 class="step-title">Ship and keep shaping</h3>
+                        <p class="step-desc">Design doesn't end at handoff. I stay close to code, close to users, close to the product. The best work evolves after launch — when reality meets intention.</p>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         <!-- Closing statement -->
@@ -91,8 +100,34 @@
         font-weight: 500;
     }
 
+    /* Layout: placeholder + steps */
+    .process-layout {
+        display: flex;
+        gap: clamp(2rem, 1.5rem + 2vw, 4rem);
+        align-items: flex-start;
+    }
+
+    /* Placeholder graphic block */
+    .process-placeholder {
+        flex: 0 0 auto;
+        width: clamp(16rem, 12rem + 10vw, 26rem);
+        position: sticky;
+        top: clamp(6rem, 5rem + 2vw, 8rem);
+        background: transparent;
+        overflow: hidden;
+    }
+
+    .placeholder-canvas {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        opacity: 0.45;
+        mix-blend-mode: multiply;
+    }
+
     /* Steps */
     .process-steps {
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: clamp(0.5rem, 0.25rem + 0.5vw, 1rem);
@@ -104,10 +139,20 @@
         gap: clamp(1.25rem, 1rem + 1vw, 2.5rem);
         padding: clamp(1.25rem, 1rem + 0.75vw, 2rem) 0;
         border-top: 1px solid rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+        transition: opacity 0.25s ease;
     }
 
     .process-step:last-child {
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .process-step:not(.is-active) {
+        opacity: 0.4;
+    }
+
+    .process-step:not(.is-active):hover {
+        opacity: 0.7;
     }
 
     .step-number {
@@ -155,13 +200,202 @@
 
     /* Mobile */
     @media (max-width: 767px) {
+        .process-layout {
+            flex-direction: column;
+        }
+        .process-placeholder {
+            width: 100%;
+            position: static;
+            aspect-ratio: 16 / 9;
+        }
         .step-content {
             flex-direction: column;
             gap: clamp(0.4rem, 0.3rem + 0.2vw, 0.6rem);
         }
-
         .step-title {
             width: auto;
         }
     }
 </style>
+
+<script>
+    // ── ASCII illustrations for each process step ──
+    // SVG paths rendered to offscreen canvas, then sampled as ASCII
+    const STEP_SVGS: (string | null)[] = [
+        null, // 01 uses real image
+        // 02 — Network/system nodes
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
+            <circle cx="100" cy="80" r="18" fill="black"/><circle cx="45" cy="160" r="14" fill="black"/>
+            <circle cx="155" cy="160" r="14" fill="black"/><circle cx="70" cy="230" r="12" fill="black"/>
+            <circle cx="130" cy="230" r="12" fill="black"/><circle cx="100" cy="140" r="8" fill="black"/>
+            <line x1="100" y1="98" x2="100" y2="132" stroke="black" stroke-width="3"/>
+            <line x1="92" y1="144" x2="55" y2="155" stroke="black" stroke-width="3"/>
+            <line x1="108" y1="144" x2="145" y2="155" stroke="black" stroke-width="3"/>
+            <line x1="50" y1="172" x2="66" y2="220" stroke="black" stroke-width="3"/>
+            <line x1="150" y1="172" x2="134" y2="220" stroke="black" stroke-width="3"/>
+            <line x1="82" y1="230" x2="118" y2="230" stroke="black" stroke-width="2"/>
+        </svg>`,
+        // 03 — Lightning bolt (speed)
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
+            <path d="M120 10 L60 140 L95 140 L75 270 L155 120 L115 120 L145 10Z" fill="black"/>
+        </svg>`,
+        // 04 — Checkmark/magnifier (validate)
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
+            <circle cx="95" cy="110" r="60" fill="none" stroke="black" stroke-width="14"/>
+            <line x1="140" y1="155" x2="180" y2="200" stroke="black" stroke-width="16" stroke-linecap="round"/>
+            <path d="M70 108 L88 126 L122 88" fill="none" stroke="black" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`,
+        // 05 — Rocket (ship)
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
+            <path d="M100 20 C100 20 130 60 130 140 L145 175 L130 175 L130 200 L100 220 L70 200 L70 175 L55 175 L70 140 C70 60 100 20 100 20Z" fill="black"/>
+            <circle cx="100" cy="110" r="14" fill="white"/>
+            <path d="M85 220 L80 260 L100 245 L120 260 L115 220" fill="black"/>
+        </svg>`,
+    ];
+
+    const CHARS = ' .·:;+=-~*%#@MW';
+    const CELL = 7;
+
+    const steps = document.querySelectorAll<HTMLElement>('.process-step');
+    const canvas = document.getElementById('placeholder-canvas') as HTMLCanvasElement;
+    const placeholder = document.getElementById('process-placeholder') as HTMLElement;
+    const ctx = canvas?.getContext('2d');
+
+    let currentStep = 0;
+    let brightnessMap: number[] = [];
+    let COLS = 0, ROWS = 0;
+    let frameId = 0;
+    let lastTime = 0;
+
+    // Set placeholder height to match first 4 rows
+    function syncHeight() {
+        const arr = Array.from(steps).slice(0, 4);
+        if (!arr.length || !placeholder) return;
+        const top = arr[0].getBoundingClientRect().top;
+        const bottom = arr[arr.length - 1].getBoundingClientRect().bottom;
+        placeholder.style.height = (bottom - top) + 'px';
+    }
+    syncHeight();
+    window.addEventListener('resize', syncHeight);
+
+    // Step 0: hardcoded brightness map (no image load needed)
+    import('../scripts/earMap').then(({ EAR_COLS, EAR_ROWS, EAR_MAP }) => {
+        earData = { COLS: EAR_COLS, ROWS: EAR_ROWS, MAP: EAR_MAP };
+        if (currentStep === 0) loadStep(0);
+    });
+    let earData: { COLS: number; ROWS: number; MAP: number[][] } | null = null;
+
+    function loadFromMap(map: number[][], cols: number, rows: number) {
+        COLS = cols;
+        ROWS = rows;
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+        brightnessMap = new Array(COLS * ROWS);
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                let v = map[r][c] / 9;
+                v = Math.max(0, Math.min(1, (v - 0.5) * 1.15 + 0.5));
+                brightnessMap[r * COLS + c] = v;
+            }
+        }
+        draw();
+    }
+
+    function loadFromSvg(svgStr: string) {
+        const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            COLS = 70;
+            ROWS = Math.round((img.height / img.width) * COLS);
+            canvas.width = COLS * CELL;
+            canvas.height = ROWS * CELL;
+            const off = document.createElement('canvas');
+            off.width = COLS; off.height = ROWS;
+            const offCtx = off.getContext('2d')!;
+            offCtx.drawImage(img, 0, 0, COLS, ROWS);
+            const data = offCtx.getImageData(0, 0, COLS, ROWS).data;
+            brightnessMap = new Array(COLS * ROWS);
+            for (let i = 0; i < COLS * ROWS; i++) {
+                const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2], a = data[i * 4 + 3];
+                brightnessMap[i] = a < 30 ? 1 : (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            }
+            URL.revokeObjectURL(url);
+            draw();
+        };
+        img.src = url;
+    }
+
+    function loadStep(index: number) {
+        if (!ctx) return;
+        if (index === 0 && earData) {
+            loadFromMap(earData.MAP, earData.COLS, earData.ROWS);
+        } else {
+            const svgStr = STEP_SVGS[index];
+            if (svgStr) loadFromSvg(svgStr);
+        }
+    }
+
+    function charFor(brightness: number): string {
+        const darkness = 1 - brightness;
+        const idx = Math.floor(darkness * (CHARS.length - 1));
+        const jitter = Math.floor(Math.random() * 3) - 1;
+        return CHARS[Math.max(0, Math.min(CHARS.length - 1, idx + jitter))];
+    }
+
+    function draw() {
+        if (!ctx || !brightnessMap.length) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const brightness = brightnessMap[r * COLS + c];
+                if (brightness > 0.92) continue;
+                const ch = charFor(brightness);
+                if (ch === ' ') continue;
+                const darkness = 1 - brightness;
+                const alpha = darkness * (0.5 + Math.random() * 0.5);
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+                ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+            }
+        }
+    }
+
+    function loop(time: number) {
+        frameId = requestAnimationFrame(loop);
+        if (time - lastTime < 125) return;
+        lastTime = time;
+        draw();
+    }
+
+    // Visibility-based animation
+    const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && brightnessMap.length) {
+            frameId = requestAnimationFrame(loop);
+        } else {
+            cancelAnimationFrame(frameId);
+        }
+    });
+    if (canvas) observer.observe(canvas);
+
+    function activate(index: number) {
+        steps.forEach(s => s.classList.remove('is-active'));
+        steps[index]?.classList.add('is-active');
+        if (index !== currentStep) {
+            currentStep = index;
+            loadStep(index);
+        }
+    }
+
+    // Init first step
+    loadStep(0);
+
+    steps.forEach((step) => {
+        const i = Number(step.dataset.step);
+        step.addEventListener('mouseenter', () => activate(i));
+        step.addEventListener('click', () => activate(i));
+    });
+</script>

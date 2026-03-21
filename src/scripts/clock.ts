@@ -9,10 +9,7 @@ export function initClock() {
             hour: '2-digit', minute: '2-digit', second: '2-digit',
             hour12: false,
         });
-        const tz = now.toLocaleTimeString('en-GB', {
-            timeZone: 'Europe/Warsaw', timeZoneName: 'short',
-        }).split(' ').pop() ?? 'CET';
-        heroClock!.textContent = `${time} ${tz}`;
+        heroClock!.textContent = time;
     }
 
     updateHeroClock();

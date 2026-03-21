@@ -21,8 +21,8 @@ export function initBuddy(config: BuddyConfig) {
 
     // Claude Code mascot — wzór 12×8 (exact)
     const T = null;
-    const O = '#CB6A4F';
-    const E = '#1A1A1A';
+    const O = '#E53E3E';
+    const E = '#000000';
 
     const FRAME_IDLE: (string | null)[][] = [
         [T,  T,  O,  O,  O,  O,  O,  O,  O,  O,  T,  T],

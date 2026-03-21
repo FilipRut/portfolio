@@ -34,6 +34,26 @@ const RINGS = [
     { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12, pivotTop: 0.07, pivotBot: 0.10, plane: 'yz' as const },
 ];
 
+// Module-level ref for programmatic exit
+let _exitState: { progress: number } | null = null;
+let _mainGroup: THREE.Group | null = null;
+
+/** Force the keychain to drop out of view (called by "Show more") */
+export function forceKeychainExit(): Promise<void> {
+    if (!_exitState || !_mainGroup) return Promise.resolve();
+    return new Promise(resolve => {
+        gsap.to(_exitState, {
+            progress: 1,
+            duration: 0.6,
+            ease: 'power3.in',
+            onComplete: () => {
+                if (_mainGroup) _mainGroup.visible = false;
+                resolve();
+            },
+        });
+    });
+}
+
 export function initThreeScene() {
     const globalContainer = document.getElementById('global-three-container');
     const placeholder = document.getElementById('keychain-container');
@@ -101,7 +121,8 @@ export function initThreeScene() {
     let charmGroup: THREE.Group;
 
     let modelLoaded = false;
-    let prevMainRotY = -Math.PI / 4;
+    mainGroup.rotation.y = Math.PI;
+    let prevMainRotY = Math.PI;
     let mainRotVelocity = 0;
 
     // Collision groups — all chain elements in same group, don't collide with each other
@@ -355,12 +376,14 @@ export function initThreeScene() {
     // Phase 2: hold at center (20%–40%) — showcase moment, brelok alone on screen
     // (no animation needed — just holds position)
 
-    // Phase 3: slide down to anchor below projects (40%–75% of intro scroll)
+    // Phase 3: slide down to anchor below projects (40%–85% of intro scroll)
     const slideState = { progress: 0 };
-    gsap.to(slideState, { progress: 1, scrollTrigger: { trigger: '#intro', start: '40% top', end: '75% top', scrub: 0.15 } });
+    gsap.to(slideState, { progress: 1, scrollTrigger: { trigger: '#intro', start: '25% top', end: '90% top', scrub: 0.15 } });
 
     // Phase 4: exit — fade out before Process section
     const exitState = { progress: 0 };
+    _exitState = exitState;
+    _mainGroup = mainGroup;
     gsap.to(exitState, { progress: 1, scrollTrigger: { trigger: '#process', start: 'top bottom', end: 'top 40%', scrub: 0.15 } });
 
     const keychainAnchor = document.getElementById('keychain-anchor');

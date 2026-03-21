@@ -1,0 +1,173 @@
+---
+---
+<section id="about" class="about-section">
+    <div class="about-inner">
+        <div class="about-portrait-wrap">
+            <canvas id="ascii-portrait" class="ascii-portrait"></canvas>
+        </div>
+        <div class="about-content">
+            <div class="about-content-inner">
+                <h2 class="about-heading">About me</h2>
+                <p class="about-text">
+                    I'm Filip — a Lead AI UX/UI Designer and Webflow developer based in Warsaw.
+                    I help brands cut through corporate chaos with sharp design systems,
+                    rapid prototyping, and AI-augmented workflows that actually ship.
+                </p>
+                <p class="about-text">
+                    Over the past years I've led design for Orange, HP, Lidl, Enea and others —
+                    building everything from enterprise dashboards to consumer apps
+                    and self-checkout kiosks.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .about-section {
+        width: 100%;
+        background: #fff;
+        padding: clamp(4rem, 3rem + 4vw, 8rem) clamp(1.5rem, 1rem + 3vw, 4rem);
+    }
+
+    .about-inner {
+        max-width: 1440px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .about-portrait-wrap {
+        width: 65%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .ascii-portrait {
+        width: 100%;
+        height: auto;
+        image-rendering: pixelated;
+        opacity: 0.45;
+        mix-blend-mode: multiply;
+    }
+
+    .about-content {
+        position: absolute;
+        left: 50%;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .about-content-inner {
+        text-align: left;
+        max-width: 32rem;
+    }
+
+    .about-heading {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(1.75rem, 1.25rem + 2.5vw, 3.5rem);
+        font-weight: 400;
+        color: #171717;
+        line-height: 1.15;
+        margin-bottom: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    }
+
+    .about-text {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.9375rem, 0.8rem + 0.5vw, 1.2rem);
+        font-weight: 400;
+        line-height: 1.65;
+        color: rgba(0, 0, 0, 0.6);
+        max-width: 36rem;
+    }
+
+    .about-text + .about-text {
+        margin-top: clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem);
+    }
+
+    @media (max-width: 768px) {
+        .about-inner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .about-portrait-wrap {
+            width: 70%;
+            max-width: none;
+        }
+    }
+</style>
+
+<script>
+    // ── ASCII Portrait from hardcoded brightness map ──
+    import('../scripts/portraitMap').then(({ PORTRAIT_COLS, PORTRAIT_ROWS, PORTRAIT_MAP }) => {
+        const canvas = document.getElementById('ascii-portrait') as HTMLCanvasElement;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d')!;
+
+        const CHARS = ' .·:;+=-~*%#@MW';
+        const CELL = 7;
+        const COLS = PORTRAIT_COLS;
+        const ROWS = PORTRAIT_ROWS;
+
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+
+        // Flatten map to brightness array (0–1)
+        const brightnessMap = new Array(COLS * ROWS);
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                brightnessMap[r * COLS + c] = PORTRAIT_MAP[r][c] / 9;
+            }
+        }
+
+        function charFor(brightness: number): string {
+            const darkness = 1 - brightness;
+            const idx = Math.floor(darkness * (CHARS.length - 1));
+            const jitter = Math.floor(Math.random() * 3) - 1;
+            return CHARS[Math.max(0, Math.min(CHARS.length - 1, idx + jitter))];
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `${CELL + 1}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const brightness = brightnessMap[r * COLS + c];
+                    if (brightness > 0.92) continue;
+                    const ch = charFor(brightness);
+                    if (ch === ' ') continue;
+                    const darkness = 1 - brightness;
+                    const alpha = darkness * (0.5 + Math.random() * 0.5);
+                    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+                    ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+                }
+            }
+        }
+
+        let frameId = 0;
+        let lastTime = 0;
+        function loop(time: number) {
+            frameId = requestAnimationFrame(loop);
+            if (time - lastTime < 125) return;
+            lastTime = time;
+            draw();
+        }
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                draw();
+                frameId = requestAnimationFrame(loop);
+            } else {
+                cancelAnimationFrame(frameId);
+            }
+        });
+        observer.observe(canvas);
+    });
+</script>
