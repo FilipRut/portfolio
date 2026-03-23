@@ -222,19 +222,8 @@
     // ── ASCII illustrations for each process step ──
     // SVG paths rendered to offscreen canvas, then sampled as ASCII
     const STEP_SVGS: (string | null)[] = [
-        null, // 01 uses real image
-        // 02 — Network/system nodes
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
-            <circle cx="100" cy="80" r="18" fill="black"/><circle cx="45" cy="160" r="14" fill="black"/>
-            <circle cx="155" cy="160" r="14" fill="black"/><circle cx="70" cy="230" r="12" fill="black"/>
-            <circle cx="130" cy="230" r="12" fill="black"/><circle cx="100" cy="140" r="8" fill="black"/>
-            <line x1="100" y1="98" x2="100" y2="132" stroke="black" stroke-width="3"/>
-            <line x1="92" y1="144" x2="55" y2="155" stroke="black" stroke-width="3"/>
-            <line x1="108" y1="144" x2="145" y2="155" stroke="black" stroke-width="3"/>
-            <line x1="50" y1="172" x2="66" y2="220" stroke="black" stroke-width="3"/>
-            <line x1="150" y1="172" x2="134" y2="220" stroke="black" stroke-width="3"/>
-            <line x1="82" y1="230" x2="118" y2="230" stroke="black" stroke-width="2"/>
-        </svg>`,
+        null, // 01 uses real image (earMap)
+        null, // 02 uses real image (brainMap)
         // 03 — Lightning bolt (speed)
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
             <path d="M120 10 L60 140 L95 140 L75 270 L155 120 L115 120 L145 10Z" fill="black"/>
@@ -285,6 +274,13 @@
     });
     let earData: { COLS: number; ROWS: number; MAP: number[][] } | null = null;
 
+    // Step 1: brain brightness map
+    import('../scripts/brainMap').then(({ BRAIN_COLS, BRAIN_ROWS, BRAIN_MAP }) => {
+        brainData = { COLS: BRAIN_COLS, ROWS: BRAIN_ROWS, MAP: BRAIN_MAP };
+        if (currentStep === 1) loadStep(1);
+    });
+    let brainData: { COLS: number; ROWS: number; MAP: number[][] } | null = null;
+
     function loadFromMap(map: number[][], cols: number, rows: number) {
         COLS = cols;
         ROWS = rows;
@@ -330,6 +326,8 @@
         if (!ctx) return;
         if (index === 0 && earData) {
             loadFromMap(earData.MAP, earData.COLS, earData.ROWS);
+        } else if (index === 1 && brainData) {
+            loadFromMap(brainData.MAP, brainData.COLS, brainData.ROWS);
         } else {
             const svgStr = STEP_SVGS[index];
             if (svgStr) loadFromSvg(svgStr);
