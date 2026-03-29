@@ -38,16 +38,16 @@ const PHYS = {
 const ORANGE_RINGS = [
     { name: 'big',    R: 0.27, tubeR: 0.03,  scale: 1.0,  N: 20,
       pivotTop: 0.19,  pivotBot: 0.20,  plane: 'yz' as const,
-      rotY: 0, meshRot: [62.0, 71.5, 20.0] as [number,number,number],
-      meshPos: [-0.225, 0.286, -0.470] as [number,number,number] },
+      rotY: 0, meshRot: [62.0, 29.0, 20.0] as [number,number,number],
+      meshPos: [-0.244, 0.273, -0.472] as [number,number,number] },
     { name: 'medium', R: 0.18, tubeR: 0.025, scale: 0.67, N: 16,
       pivotTop: 0.20,  pivotBot: 0.12,  plane: 'xy' as const,
-      rotY: 0, meshRot: [167.0, 28.5, -108.5] as [number,number,number],
-      meshPos: [-0.614, 0.253, -0.201] as [number,number,number] },
+      rotY: 0, meshRot: [141.1, 30.1, -59.4] as [number,number,number],
+      meshPos: [-0.822, 0.580, -0.272] as [number,number,number] },
     { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12,
       pivotTop: 0.07,  pivotBot: 0.10,  plane: 'yz' as const,
-      rotY: 0, meshRot: [-104.0, -41.5, -130.4] as [number,number,number],
-      meshPos: [-0.710, 0.408, -0.312] as [number,number,number] },
+      rotY: 0, meshRot: [-88.5, -55.5, -135.5] as [number,number,number],
+      meshPos: [-0.847, 0.511, -0.166] as [number,number,number] },
 ];
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -70,12 +70,26 @@ const ZABKA_RINGS = [
 const HP_RINGS = [
     { name: 'hbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
       pivotTop: 0.14,  pivotBot: 0.14,  plane: 'yz' as const,
-      rotY: 0, meshRot: [0, -112.0, 0] as [number,number,number],
-      meshPos: [-0.117, -0.293, 0.130] as [number,number,number] },
+      rotY: 0, meshRot: [180, -68.0, 180] as [number,number,number],
+      meshPos: [-0.085, -0.284, 0.052] as [number,number,number] },
     { name: 'hsmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
       pivotTop: 0.08,  pivotBot: 0.06,  plane: 'xy' as const,
-      rotY: 0, meshRot: [180, 54.5, -180] as [number,number,number],
-      meshPos: [-0.106, -0.258, 0.191] as [number,number,number] },
+      rotY: 0, meshRot: [-126.5, 5.5, 180] as [number,number,number],
+      meshPos: [0.004, 0.069, -0.397] as [number,number,number] },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  WELLA — ringi łańcucha (od karabińczyka do charmu)        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const WELLA_RINGS = [
+    { name: 'wbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
+      pivotTop: 0.14,  pivotBot: 0.14,  plane: 'yz' as const,
+      rotY: 0, meshRot: [0, 90.0, 0] as [number,number,number],
+      meshPos: [0.121, -0.338, 0] as [number,number,number] },
+    { name: 'wsmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
+      pivotTop: 0.08,  pivotBot: 0.06,  plane: 'xy' as const,
+      rotY: 0, meshRot: [-36.5, -22.5, -4.0] as [number,number,number],
+      meshPos: [0.087, -0.072, 0.383] as [number,number,number] },
 ];
 
 // Module-level ref for programmatic exit
@@ -176,6 +190,12 @@ export function initThreeScene() {
     let hpCharmBody: RAPIER.RigidBody;
     let hpCharmGroup: THREE.Group;
 
+    // Wella chain (rings + charm)
+    const wellaBodies: RAPIER.RigidBody[] = [];
+    const wellaGroups: THREE.Group[] = [];
+    let wellaCharmBody: RAPIER.RigidBody;
+    let wellaCharmGroup: THREE.Group;
+
     let modelLoaded = false;
     mainGroup.rotation.y = Math.PI;
     let prevMainRotY = Math.PI;
@@ -186,6 +206,7 @@ export function initThreeScene() {
     const ORANGE_GROUP    = (0x0001 << 16) | 0x0000; // no collisions (intra-chain handled by joints)
     const ZABKA_GROUP     = (0x0002 << 16) | 0x0000; // no collisions
     const HP_GROUP        = (0x0008 << 16) | 0x0000; // no collisions
+    const WELLA_GROUP     = (0x0010 << 16) | 0x0000; // no collisions
 
     function addCarabinerColliders(body: RAPIER.RigidBody) {
         const N = 28, semiA = 0.35, semiB = 0.80, tubeR = 0.055, centerY = 0.05;
@@ -431,8 +452,45 @@ export function initThreeScene() {
             );
         }
 
+        // ── Wella chain: 2 rings, left side of carabiner ──
+        createRingChain(WELLA_RINGS, carabinerBody,
+            { x: -0.25, y: -0.52, z: 0.05 },
+            wellaBodies, WELLA_GROUP);
+
+        const WELLA_PEG_OFFSET = 0.42;
+        {
+            const lastRing = WELLA_RINGS[WELLA_RINGS.length - 1];
+            const lastBody = wellaBodies[wellaBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - WELLA_PEG_OFFSET;
+
+            wellaCharmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(lastPos.x, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.66, 0.42, 0.05)
+                    .setCollisionGroups(WELLA_GROUP)
+                    .setDensity(1.0)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
+                wellaCharmBody,
+            );
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: WELLA_PEG_OFFSET, z: 0 },
+                ),
+                lastBody, wellaCharmBody, true,
+            );
+        }
+
         // ── Load visuals ──
-        const TOTAL = 1 + ORANGE_RINGS.length + ZABKA_RINGS.length + HP_RINGS.length + 3; // carabiner + all ring chains + 3 charms
+        const TOTAL = 1 + ORANGE_RINGS.length + ZABKA_RINGS.length + HP_RINGS.length + WELLA_RINGS.length + 4; // carabiner + all ring chains + 4 charms
         let loadCount = 0;
         function onLoaded() {
             if (++loadCount === TOTAL) {
@@ -445,9 +503,11 @@ export function initThreeScene() {
                 orangeGroups.forEach((g, i) => g && selectables.push({ label: `Orange ring ${ORANGE_RINGS[i].name}`, group: g, mesh: g.children[0], body: orangeBodies[i] }));
                 zabkaGroups.forEach((g, i) => g && selectables.push({ label: `Żabka ring ${ZABKA_RINGS[i].name}`, group: g, mesh: g.children[0], body: zabkaBodies[i] }));
                 hpGroups.forEach((g, i) => g && selectables.push({ label: `HP ring ${HP_RINGS[i].name}`, group: g, mesh: g.children[0], body: hpBodies[i] }));
+                wellaGroups.forEach((g, i) => g && selectables.push({ label: `Wella ring ${WELLA_RINGS[i].name}`, group: g, mesh: g.children[0], body: wellaBodies[i] }));
                 if (orangeCharmGroup) selectables.push({ label: 'Orange charm', group: orangeCharmGroup, mesh: orangeCharmGroup.children[0], body: orangeCharmBody });
                 if (zabkaCharmGroup) selectables.push({ label: 'Żabka charm', group: zabkaCharmGroup, mesh: zabkaCharmGroup.children[0], body: zabkaCharmBody });
                 if (hpCharmGroup) selectables.push({ label: 'HP charm', group: hpCharmGroup, mesh: hpCharmGroup.children[0], body: hpCharmBody });
+                if (wellaCharmGroup) selectables.push({ label: 'Wella charm', group: wellaCharmGroup, mesh: wellaCharmGroup.children[0], body: wellaCharmBody });
                 initKeychainDebug({ scene, camera, renderer, mainGroup, selectables });
             }
         }
@@ -507,8 +567,8 @@ export function initThreeScene() {
             mesh.add(innerCore);
 
             // ── Pozycja i obrót wizualny charmu Orange ──
-            mesh.position.set(-0.695, 0.978, -0.192);
-            mesh.rotation.set(-164.6 * Math.PI/180, 29.0 * Math.PI/180, -139.3 * Math.PI/180);
+            mesh.position.set(-0.828, 1.055, 0.011);
+            mesh.rotation.set(-166.6 * Math.PI/180, 8.7 * Math.PI/180, -145.1 * Math.PI/180);
 
             orangeCharmGroup.add(mesh);
             mainGroup.add(orangeCharmGroup);
@@ -560,11 +620,29 @@ export function initThreeScene() {
             });
 
             // ── Pozycja i obrót wizualny charmu HP ──
-            mesh.position.set(-0.120, 0.870, 0.157);
-            mesh.rotation.set(-Math.PI, -35.0 * Math.PI/180, -Math.PI);
+            mesh.position.set(-0.046, 1.172, -0.307);
+            mesh.rotation.set(-126.5 * Math.PI/180, -84.0 * Math.PI/180, -Math.PI);
 
             hpCharmGroup.add(mesh);
             mainGroup.add(hpCharmGroup);
+            onLoaded();
+        });
+
+        // Wella charm — keep original Gold Ore + Dirty red plastic materials
+        loader.load(basePath + 'Wella.glb', (gltf) => {
+            wellaCharmGroup = new THREE.Group();
+            const mesh = gltf.scene;
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (!m.isMesh) return;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                mats.forEach(mat => { if (mat) (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide; });
+            });
+            // ── Pozycja i obrót wizualny charmu Wella ──
+            mesh.position.set(0.155, 0.462, 0.341);
+            mesh.rotation.set(-25.5 * Math.PI/180, 95.0 * Math.PI/180, -27.5 * Math.PI/180);
+            wellaCharmGroup.add(mesh);
+            mainGroup.add(wellaCharmGroup);
             onLoaded();
         });
 
@@ -594,6 +672,7 @@ export function initThreeScene() {
             ORANGE_RINGS.forEach((ring, i) => loadRingVisual(ring, orangeGroups, i));
             ZABKA_RINGS.forEach((ring, i) => loadRingVisual(ring, zabkaGroups, i));
             HP_RINGS.forEach((ring, i) => loadRingVisual(ring, hpGroups, i));
+            WELLA_RINGS.forEach((ring, i) => loadRingVisual(ring, wellaGroups, i));
         });
     });
 
@@ -733,6 +812,12 @@ export function initThreeScene() {
             hpBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: hg.x*m, y: hg.y*m, z: hg.z*m }, true); });
             if (hpCharmBody) { const m = hpCharmBody.mass(); hpCharmBody.applyImpulse({ x: hg.x*m, y: hg.y*m, z: hg.z*m }, true); }
 
+            // Wella: lewo + do przodu
+            const WA = -25 * Math.PI / 180;
+            const wg = { x: Math.sin(WA) * G, y: -Math.cos(WA) * G, z: 0.04 * G };
+            wellaBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); });
+            if (wellaCharmBody) { const m = wellaCharmBody.mass(); wellaCharmBody.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); }
+
             if (carabinerBody) { const m = carabinerBody.mass(); carabinerBody.applyImpulse({ x: 0, y: -G * m, z: 0 }, true); }
         }
 
@@ -774,6 +859,17 @@ export function initThreeScene() {
             const p = hpCharmBody.translation(); hpCharmGroup.position.set(p.x, p.y, p.z);
             const lastBody = hpBodies[hpBodies.length - 1];
             if (lastBody) { const r = lastBody.rotation(); hpCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
+        }
+        // Sync Wella chain
+        wellaBodies.forEach((body, i) => {
+            const group = wellaGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (wellaCharmBody && wellaCharmGroup) {
+            const p = wellaCharmBody.translation(); wellaCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = wellaBodies[wellaBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); wellaCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
         }
 
         // ── Scroll positioning + visuals (disabled in debug mode) ──

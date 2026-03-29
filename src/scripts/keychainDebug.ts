@@ -336,6 +336,7 @@ function getChainChildren(entry: Selectable): Selectable[] {
     const chainId = label.includes('Orange') ? 'Orange'
         : (label.includes('Żabka') || label.includes('zabka')) ? 'Żabka'
         : label.includes('HP') ? 'HP'
+        : label.includes('Wella') ? 'Wella'
         : null;
     if (!chainId) return [];
 
@@ -348,6 +349,7 @@ function getChainChildren(entry: Selectable): Selectable[] {
         const match = chainId === 'Orange' ? l.includes('Orange')
             : chainId === 'Żabka' ? (l.includes('Żabka') || l.includes('zabka'))
             : chainId === 'HP' ? l.includes('HP')
+            : chainId === 'Wella' ? l.includes('Wella')
             : false;
         if (match) ch.push(items[i]);
     }
