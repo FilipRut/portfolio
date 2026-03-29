@@ -120,7 +120,9 @@
         const brightnessMap = new Array(COLS * ROWS);
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-                brightnessMap[r * COLS + c] = PORTRAIT_MAP[r][c] / 9;
+                let v = PORTRAIT_MAP[r][c] / 9;
+                v = Math.max(0, Math.min(1, (v - 0.5) * 1.38 + 0.5));
+                brightnessMap[r * COLS + c] = v;
             }
         }
 

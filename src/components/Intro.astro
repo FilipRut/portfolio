@@ -22,12 +22,15 @@ const featured = projects.slice(0, 6);
         <!-- Row 1: Photo + Heading + Keychain + Description -->
         <div class="intro-row">
             <div class="intro-left flex items-center" style="gap: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);">
-                <img
-                    src="https://placehold.co/111x160/e5e5e5/737373?text=Photo"
-                    alt="Filip Rut"
-                    class="intro-el object-cover rounded shrink-0"
-                    style="width: clamp(4rem, 3rem + 3vw, 7rem); height: clamp(5.5rem, 4rem + 4vw, 10rem);"
-                />
+                <a href="#about" id="intro-photo-link" class="intro-photo-wrap intro-el shrink-0 rounded" style="width: clamp(4rem, 3rem + 3vw, 7rem); height: clamp(5.5rem, 4rem + 4vw, 10rem);">
+                    <img
+                        src="/assets/filip-rut.avif"
+                        alt="Filip Rut"
+                        class="intro-photo-img object-cover rounded"
+                        id="intro-photo-img"
+                    />
+                    <canvas id="intro-photo-canvas" class="intro-photo-canvas rounded"></canvas>
+                </a>
                 <h1 class="intro-el text-stone-950 font-normal leading-tight" style="font-size: clamp(1.5rem, 1rem + 2.5vw, 3.5rem);">
                     Leading above the corporate chaos
                 </h1>
@@ -124,6 +127,28 @@ const featured = projects.slice(0, 6);
     .intro-left {
         flex: 1 1 0%;
         min-width: 0;
+    }
+
+    /* Photo ASCII overlay */
+    .intro-photo-wrap {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .intro-photo-img {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+    .intro-photo-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        pointer-events: none;
     }
 
     .intro-keychain {
@@ -429,6 +454,168 @@ const featured = projects.slice(0, 6);
         }
     }
 </style>
+
+<script>
+    // ── ASCII photo overlay with metaball blob effect ──
+    import('../scripts/introPhotoMap').then(({ INTRO_COLS, INTRO_ROWS, INTRO_MAP }) => {
+        const canvas = document.getElementById('intro-photo-canvas') as HTMLCanvasElement;
+        const wrap = document.getElementById('intro-photo-link') as HTMLAnchorElement;
+        if (!canvas || !wrap) return;
+        const ctx = canvas.getContext('2d')!;
+
+        const CHARS = ' .·:;+=-~*%#@MW';
+        const CELL = 9;
+        const COLS = INTRO_COLS;
+        const ROWS = INTRO_ROWS;
+        const PRIMARY = 'rgba(229, 62, 62,';
+        const BLOB_R = 4.7; // cursor blob radius in cells
+        const EDGE_R = 1.2; // edge stickiness radius in cells
+
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+
+        // Brightness map
+        const brightnessMap = new Array(COLS * ROWS);
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                let v = INTRO_MAP[r][c] / 9;
+                v = Math.max(0, Math.min(1, (v - 0.5) * 1.38 + 0.5));
+                brightnessMap[r * COLS + c] = v;
+            }
+        }
+
+        // Cached jitter (updated every 125ms, blob moves at 60fps)
+        const jitterChars = new Array(COLS * ROWS).fill(' ');
+        const jitterAlphas = new Array(COLS * ROWS).fill(0);
+        function updateJitter() {
+            for (let i = 0; i < COLS * ROWS; i++) {
+                const b = brightnessMap[i];
+                if (b > 0.92) { jitterChars[i] = ' '; jitterAlphas[i] = 0; continue; }
+                const darkness = 1 - b;
+                const idx = Math.floor(darkness * (CHARS.length - 1));
+                const j = Math.floor(Math.random() * 3) - 1;
+                jitterChars[i] = CHARS[Math.max(0, Math.min(CHARS.length - 1, idx + j))];
+                jitterAlphas[i] = darkness * (0.5 + Math.random() * 0.5);
+            }
+        }
+        updateJitter();
+
+        // Hover state
+        let hoverX = -1, hoverY = -1; // pixel coords on canvas
+        let isHovering = false;
+        let blobScale = 0; // 0→1 animated reveal
+        const BLOB_SPEED = 0.08; // lerp speed per frame
+
+        wrap.addEventListener('mouseenter', () => { isHovering = true; });
+        wrap.addEventListener('mouseleave', () => { isHovering = false; });
+        wrap.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            hoverX = (e.clientX - rect.left) / rect.width * canvas.width;
+            hoverY = (e.clientY - rect.top) / rect.height * canvas.height;
+        });
+        wrap.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Offscreen mask canvas for metaball field
+        const maskCvs = document.createElement('canvas');
+        const mScale = 2; // compute at half res for speed
+        const mW = Math.ceil(canvas.width / mScale);
+        const mH = Math.ceil(canvas.height / mScale);
+        maskCvs.width = mW;
+        maskCvs.height = mH;
+        const maskCtx = maskCvs.getContext('2d')!;
+
+        function buildMask() {
+            const bR = BLOB_R * CELL / mScale * blobScale;
+            const bR2 = bR * bR;
+            const eR = EDGE_R * CELL / mScale;
+            const eR2 = eR * eR;
+            const cx = hoverX / mScale;
+            const cy = hoverY / mScale;
+
+            const imgData = maskCtx.createImageData(mW, mH);
+            const d = imgData.data;
+
+            for (let y = 0; y < mH; y++) {
+                for (let x = 0; x < mW; x++) {
+                    const dx = x - cx, dy = y - cy;
+                    let field = bR2 / Math.max(dx * dx + dy * dy, 0.5);
+
+                    // Edge contributions (capped so edges alone never trigger)
+                    const dl = x + 1, dr = mW - x, dt = y + 1, db = mH - y;
+                    field += Math.min(eR2 / Math.max(dl * dl, 0.5), 0.35);
+                    field += Math.min(eR2 / Math.max(dr * dr, 0.5), 0.35);
+                    field += Math.min(eR2 / Math.max(dt * dt, 0.5), 0.35);
+                    field += Math.min(eR2 / Math.max(db * db, 0.5), 0.35);
+
+                    const i = (y * mW + x) * 4;
+                    d[i] = d[i + 1] = d[i + 2] = 255;
+                    d[i + 3] = field > 1.0 ? 255 : 0;
+                }
+            }
+            maskCtx.putImageData(imgData, 0, 0);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Animate blob scale
+            const target = isHovering ? 1 : 0;
+            blobScale += (target - blobScale) * BLOB_SPEED;
+            if (blobScale < 0.01 && !isHovering) { blobScale = 0; return; }
+            if (hoverX < 0) return;
+
+            // Build metaball mask
+            buildMask();
+
+            // Draw primary color background + ASCII chars
+            ctx.fillStyle = 'rgba(229, 62, 62, 0.9)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const i = r * COLS + c;
+                    const ch = jitterChars[i];
+                    if (ch === ' ') continue;
+                    ctx.fillStyle = '#000';
+                    ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+                }
+            }
+
+            // Apply blob mask (scales up smoothly from half-res)
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(maskCvs, 0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        let frameId = 0;
+        let lastJitter = 0;
+        function loop(time: number) {
+            frameId = requestAnimationFrame(loop);
+            if (time - lastJitter > 125) {
+                lastJitter = time;
+                updateJitter();
+            }
+            draw();
+        }
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                frameId = requestAnimationFrame(loop);
+            } else {
+                cancelAnimationFrame(frameId);
+            }
+        });
+        observer.observe(canvas);
+    });
+</script>
 
 <script>
     const preview = document.getElementById('tile-preview') as HTMLDivElement;

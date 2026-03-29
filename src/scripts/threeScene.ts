@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import gsap from 'gsap';
 import 'gsap/ScrollTrigger';
+import { initKeychainDebug, updateDebug, isPhysPaused, isDebugMode } from './keychainDebug';
 
 /*
  * Keychain chain: Anchor → Carabiner → BigRing → MediumRing → SmallRing
@@ -24,14 +25,57 @@ const PHYS = {
     RESTITUTION:     0.0,
 };
 
-// Ring definitions: name, physics radius, tube radius, visual scale, sphere count
-// Rings alternate orientation: YZ → XZ → YZ (like a real chain)
-// pivotTop < R → ring overlaps INTO parent (interlocking chain look)
-// pivotBot < R → child overlaps into this ring
-const RINGS = [
-    { name: 'big',    R: 0.27, tubeR: 0.03,  scale: 1.0,  N: 20, pivotTop: 0.20, pivotBot: 0.20, plane: 'yz' as const },
-    { name: 'medium', R: 0.18, tubeR: 0.025, scale: 0.67, N: 16, pivotTop: 0.18, pivotBot: 0.12, plane: 'xy' as const },
-    { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12, pivotTop: 0.07, pivotBot: 0.10, plane: 'yz' as const },
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ORANGE — ringi łańcucha (od karabińczyka do charmu)       ║
+// ║                                                            ║
+// ║  R         = rozmiar ringa (promień okręgu fizycznego)      ║
+// ║  scale     = skala wizualna modelu 3D                      ║
+// ║  pivotTop  = zanurzenie W GÓRĘ w parent (mniej = wyżej)    ║
+// ║  pivotBot  = punkt zaczepienia DZIECKA pod ringiem          ║
+// ║  plane     = orientacja: 'yz' = widoczny z przodu,          ║
+// ║              'xy' = widoczny z boku (naprzemiennie)         ║
+// ╚══════════════════════════════════════════════════════════════╝
+const ORANGE_RINGS = [
+    { name: 'big',    R: 0.27, tubeR: 0.03,  scale: 1.0,  N: 20,
+      pivotTop: 0.19,  pivotBot: 0.20,  plane: 'yz' as const,
+      rotY: 0, meshRot: [62.0, 71.5, 20.0] as [number,number,number],
+      meshPos: [-0.225, 0.286, -0.470] as [number,number,number] },
+    { name: 'medium', R: 0.18, tubeR: 0.025, scale: 0.67, N: 16,
+      pivotTop: 0.20,  pivotBot: 0.12,  plane: 'xy' as const,
+      rotY: 0, meshRot: [167.0, 28.5, -108.5] as [number,number,number],
+      meshPos: [-0.614, 0.253, -0.201] as [number,number,number] },
+    { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12,
+      pivotTop: 0.07,  pivotBot: 0.10,  plane: 'yz' as const,
+      rotY: 0, meshRot: [-104.0, -41.5, -130.4] as [number,number,number],
+      meshPos: [-0.710, 0.408, -0.312] as [number,number,number] },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ŻABKA — ringi łańcucha (od karabińczyka do charmu)        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const ZABKA_RINGS = [
+    { name: 'zbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
+      pivotTop: 0.14,  pivotBot: 0.16,  plane: 'yz' as const,
+      rotY: 0, meshRot: [-22.5, 81.0, 10.5] as [number,number,number],
+      meshPos: [0, -0.251, 0.113] as [number,number,number] },
+    { name: 'zsmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
+      pivotTop: 0.10,  pivotBot: 0.07,  plane: 'xy' as const,
+      rotY: 0, meshRot: [-13.4, 39.1, 2.0] as [number,number,number],
+      meshPos: [-0.017, -0.155, 0.153] as [number,number,number] },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  HP — ringi łańcucha (od karabińczyka do charmu)           ║
+// ╚══════════════════════════════════════════════════════════════╝
+const HP_RINGS = [
+    { name: 'hbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
+      pivotTop: 0.14,  pivotBot: 0.14,  plane: 'yz' as const,
+      rotY: 0, meshRot: [0, -112.0, 0] as [number,number,number],
+      meshPos: [-0.117, -0.293, 0.130] as [number,number,number] },
+    { name: 'hsmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
+      pivotTop: 0.08,  pivotBot: 0.06,  plane: 'xy' as const,
+      rotY: 0, meshRot: [180, 54.5, -180] as [number,number,number],
+      meshPos: [-0.106, -0.258, 0.191] as [number,number,number] },
 ];
 
 // Module-level ref for programmatic exit
@@ -114,19 +158,34 @@ export function initThreeScene() {
     let carabinerBody: RAPIER.RigidBody;
     let carabinerGroup: THREE.Group;
 
-    // Chain links (rings + charm)
-    const chainBodies: RAPIER.RigidBody[] = [];
-    const chainGroups: THREE.Group[] = [];
-    let charmBody: RAPIER.RigidBody;
-    let charmGroup: THREE.Group;
+    // Orange chain (rings + charm)
+    const orangeBodies: RAPIER.RigidBody[] = [];
+    const orangeGroups: THREE.Group[] = [];
+    let orangeCharmBody: RAPIER.RigidBody;
+    let orangeCharmGroup: THREE.Group;
+
+    // Zabka chain (rings + charm)
+    const zabkaBodies: RAPIER.RigidBody[] = [];
+    const zabkaGroups: THREE.Group[] = [];
+    let zabkaCharmBody: RAPIER.RigidBody;
+    let zabkaCharmGroup: THREE.Group;
+
+    // HP chain (rings + charm)
+    const hpBodies: RAPIER.RigidBody[] = [];
+    const hpGroups: THREE.Group[] = [];
+    let hpCharmBody: RAPIER.RigidBody;
+    let hpCharmGroup: THREE.Group;
 
     let modelLoaded = false;
     mainGroup.rotation.y = Math.PI;
     let prevMainRotY = Math.PI;
     let mainRotVelocity = 0;
 
-    // Collision groups — all chain elements in same group, don't collide with each other
-    const CHAIN_GROUP = (0x0001 << 16) | 0xFFFE; // member=1, filter=NOT group 1
+    // Collision groups — no inter-chain collisions (directional gravity separates them)
+    const CARABINER_GROUP = (0x0004 << 16) | 0x0000; // no collisions
+    const ORANGE_GROUP    = (0x0001 << 16) | 0x0000; // no collisions (intra-chain handled by joints)
+    const ZABKA_GROUP     = (0x0002 << 16) | 0x0000; // no collisions
+    const HP_GROUP        = (0x0008 << 16) | 0x0000; // no collisions
 
     function addCarabinerColliders(body: RAPIER.RigidBody) {
         const N = 28, semiA = 0.35, semiB = 0.80, tubeR = 0.055, centerY = 0.05;
@@ -135,33 +194,46 @@ export function initThreeScene() {
             world.createCollider(
                 RAPIER.ColliderDesc.ball(tubeR)
                     .setTranslation(Math.cos(a) * semiA, Math.sin(a) * semiB + centerY, 0)
-                    .setCollisionGroups(CHAIN_GROUP)
-                    .setDensity(2.0),
+                    .setCollisionGroups(CARABINER_GROUP)
+                    .setDensity(2.0)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
                 body,
             );
         }
     }
 
-    function addRingColliders(body: RAPIER.RigidBody, R: number, tubeR: number, N: number, plane: 'yz' | 'xy') {
+    function addRingColliders(body: RAPIER.RigidBody, R: number, tubeR: number, N: number, plane: 'yz' | 'xy', group: number) {
+        // Perimeter spheres (visual tube shape)
         for (let i = 0; i < N; i++) {
             const a = (i / N) * Math.PI * 2;
-            // YZ plane: ring in Y-Z, flat in X (perpendicular to camera)
-            // XY plane: ring in X-Y, flat in Z (facing camera)
             const x = plane === 'xy' ? Math.cos(a) * R : 0;
-            const y = Math.sin(a) * R; // both planes extend in Y
+            const y = Math.sin(a) * R;
             const z = plane === 'yz' ? Math.cos(a) * R : 0;
             world.createCollider(
                 RAPIER.ColliderDesc.ball(tubeR)
                     .setTranslation(x, y, z)
-                    .setCollisionGroups(CHAIN_GROUP)
-                    .setDensity(1.5),
+                    .setCollisionGroups(group)
+                    .setDensity(1.5)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
                 body,
             );
         }
+        // Center blocker — prevents other chain's rings from passing through the middle
+        world.createCollider(
+            RAPIER.ColliderDesc.ball(R * 0.55)
+                .setTranslation(0, 0, 0)
+                .setCollisionGroups(group)
+                .setDensity(0.1)
+                .setFriction(0.0)
+                .setRestitution(0.0),
+            body,
+        );
     }
 
     RAPIER.init({}).then(() => {
-        world = new RAPIER.World({ x: 0, y: PHYS.GRAVITY, z: 0 });
+        world = new RAPIER.World({ x: 0, y: 0, z: 0 }); // zero gravity — applied per-body with directional pull
 
         const ANCHOR_Y = 0.89;
         const CARABINER_BOT_Y = -0.75;
@@ -177,7 +249,7 @@ export function initThreeScene() {
                 .setTranslation(0, 0, 0)
                 .setLinearDamping(PHYS.LINEAR_DAMPING)
                 .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                .setCcdEnabled(false)
+                .setCcdEnabled(true)
         );
         addCarabinerColliders(carabinerBody);
 
@@ -190,91 +262,193 @@ export function initThreeScene() {
             anchorBody, carabinerBody, true,
         );
 
-        // ── Create ring chain ──
-        // Each ring connects: parent bottom → this ring top
-        let parentBody: RAPIER.RigidBody = carabinerBody;
-        let parentBottomLocal = { x: 0, y: CARABINER_BOT_Y, z: 0 }; // carabiner bottom
+        // ── Create ring chain (reusable for multiple chains) ──
+        function createRingChain(
+            rings: typeof ORANGE_RINGS,
+            parentBody: RAPIER.RigidBody,
+            attachLocal: { x: number; y: number; z: number },
+            bodies: RAPIER.RigidBody[],
+            collisionGroup: number,
+        ) {
+            let curParent = parentBody;
+            let curBottom = attachLocal;
 
-        RINGS.forEach((ring) => {
-            // Body center positioned so top pivot aligns with parent's bottom pivot
-            // Joint will be: parentBody@parentBottomLocal → ringBody@(0, pivotTop, 0)
-            // So ringBody center Y = parentBottomWorldY - pivotTop
-            const parentPos = parentBody.translation();
-            const jointWorldY = parentPos.y + parentBottomLocal.y;
-            const centerY = jointWorldY - ring.pivotTop;
+            rings.forEach((ring) => {
+                const parentPos = curParent.translation();
+                const jointWorldY = parentPos.y + curBottom.y;
+                const centerY = jointWorldY - ring.pivotTop;
+                const centerX = parentPos.x + (curBottom.x || 0);
 
-            const body = world.createRigidBody(
-                RAPIER.RigidBodyDesc.dynamic()
-                    .setTranslation(0, centerY, 0)
-                    .setLinearDamping(PHYS.LINEAR_DAMPING)
-                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                    .setCcdEnabled(false)
-            );
-            addRingColliders(body, ring.R, ring.tubeR, ring.N, ring.plane);
+                const body = world.createRigidBody(
+                    RAPIER.RigidBodyDesc.dynamic()
+                        .setTranslation(centerX, centerY, 0)
+                        .setLinearDamping(PHYS.LINEAR_DAMPING)
+                        .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                        .setCcdEnabled(true)
+                );
+                addRingColliders(body, ring.R, ring.tubeR, ring.N, ring.plane, collisionGroup);
 
-            // Joint: parent bottom → ring top
-            world.createImpulseJoint(
-                RAPIER.JointData.spherical(
-                    parentBottomLocal,
-                    { x: 0, y: ring.pivotTop, z: 0 },
-                ),
-                parentBody, body, true,
-            );
+                world.createImpulseJoint(
+                    RAPIER.JointData.spherical(
+                        curBottom,
+                        { x: 0, y: ring.pivotTop, z: 0 },
+                    ),
+                    curParent, body, true,
+                );
 
-            chainBodies.push(body);
+                bodies.push(body);
+                curParent = body;
+                curBottom = { x: 0, y: -ring.pivotBot, z: 0 };
+            });
+        }
 
-            // Next ring connects to this ring's bottom
-            parentBody = body;
-            parentBottomLocal = { x: 0, y: -ring.pivotBot, z: 0 };
-        });
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  PUNKTY ZACZEPIENIA łańcuchów na karabińczyku               ║
+        // ║                                                            ║
+        // ║  x = lewo(-) / prawo(+) na karabińczyku                    ║
+        // ║      zakres: -0.35 (skrajnie lewo) do +0.35 (skrajnie prawo)║
+        // ║  y = wysokość na karabińczyku                               ║
+        // ║      -0.75 = sam dół, -0.40 = bok, 0.0 = środek            ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        createRingChain(ORANGE_RINGS, carabinerBody,
+            { x: -0.15, y: -0.69, z: 0.08 },  // ← Orange: lewo, dół, lekko do przodu
+            orangeBodies, ORANGE_GROUP);
 
-        // ── Orange charm body ──
-        // Orange mesh: peg at bottom Y=-0.924, top face Y=0.012, center Y=-0.456
-        // We flip it (bake rotation) so peg is at top: Y=+0.924 from flipped center +0.456
-        // Peg tip is 0.468 above body center (0.924 - 0.456)
-        // Connect peg to last ring's bottom pivot
-        const CHARM_PEG_OFFSET = 0.46; // close to peg tip (0.468) — minimal gap
-        const lastRing = RINGS[RINGS.length - 1];
+        createRingChain(ZABKA_RINGS, carabinerBody,
+            { x: 0.23, y: -0.46, z: -0.08 },  // ← Żabka: prawo, wyżej, lekko do tyłu
+            zabkaBodies, ZABKA_GROUP);
+
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  CHARM ORANGE — odległość charmu od ostatniego ringa        ║
+        // ║  Mniejsza wartość = charm bliżej ringa (wyżej)             ║
+        // ║  Większa wartość = charm dalej od ringa (niżej)             ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const ORANGE_PEG_OFFSET = 0.46;  // ← odległość peg→centrum charmu
         {
-            const lastRingBody = chainBodies[chainBodies.length - 1];
-            const lastRingPos = lastRingBody.translation();
-            const jointWorldY = lastRingPos.y + (-lastRing.pivotBot);
-            const charmCenterY = jointWorldY - CHARM_PEG_OFFSET;
+            const lastRing = ORANGE_RINGS[ORANGE_RINGS.length - 1];
+            const lastBody = orangeBodies[orangeBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - ORANGE_PEG_OFFSET;
 
-            charmBody = world.createRigidBody(
+            orangeCharmBody = world.createRigidBody(
                 RAPIER.RigidBodyDesc.dynamic()
-                    .setTranslation(0, charmCenterY, 0)
+                    .setTranslation(lastPos.x, charmCenterY, 0)
                     .setLinearDamping(PHYS.LINEAR_DAMPING)
                     .setAngularDamping(PHYS.ANGULAR_DAMPING)
-                    .setCcdEnabled(false)
+                    .setCcdEnabled(true)
             );
-
-            // Box collider approximating the cube (0.88 x 0.94 x 0.39)
-            // After flip, same dimensions — use half-extents
             world.createCollider(
                 RAPIER.ColliderDesc.cuboid(0.44, 0.47, 0.19)
-                    .setCollisionGroups(CHAIN_GROUP)
-                    .setDensity(1.0),
-                charmBody,
+                    .setCollisionGroups(ORANGE_GROUP)
+                    .setDensity(1.0)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
+                orangeCharmBody,
             );
-
-            // Joint: last ring bottom → charm peg (top of flipped charm)
             world.createImpulseJoint(
                 RAPIER.JointData.spherical(
-                    { x: 0, y: -lastRing.pivotBot, z: 0 },    // last ring's bottom
-                    { x: 0, y: CHARM_PEG_OFFSET, z: 0 },       // charm's peg (top)
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: ORANGE_PEG_OFFSET, z: 0 },
                 ),
-                lastRingBody, charmBody, true,
+                lastBody, orangeCharmBody, true,
+            );
+        }
+
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  CHARM ŻABKA — odległość charmu od ostatniego ringa         ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const ZABKA_PEG_OFFSET = 0.63;   // ← odległość peg→centrum charmu
+        {
+            const lastRing = ZABKA_RINGS[ZABKA_RINGS.length - 1];
+            const lastBody = zabkaBodies[zabkaBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - ZABKA_PEG_OFFSET;
+
+            zabkaCharmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(lastPos.x, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.66, 0.63, 0.10)
+                    .setCollisionGroups(ZABKA_GROUP)
+                    .setDensity(1.0)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
+                zabkaCharmBody,
+            );
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: ZABKA_PEG_OFFSET, z: 0 },
+                ),
+                lastBody, zabkaCharmBody, true,
+            );
+        }
+
+        // ── HP chain: 2 rings, bottom-center of carabiner ──
+        // HP chain: 2 rings, center-bottom of carabiner, behind (Z separation)
+        createRingChain(HP_RINGS, carabinerBody,
+            { x: 0.05, y: -0.72, z: -0.15 },
+            hpBodies, HP_GROUP);
+
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  CHARM HP — odległość charmu od ostatniego ringa            ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const HP_PEG_OFFSET = 0.99;
+        {
+            const lastRing = HP_RINGS[HP_RINGS.length - 1];
+            const lastBody = hpBodies[hpBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - HP_PEG_OFFSET;
+
+            hpCharmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(lastPos.x, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.42, 0.99, 0.05)
+                    .setCollisionGroups(HP_GROUP)
+                    .setDensity(1.0)
+                    .setFriction(0.0)
+                    .setRestitution(0.0),
+                hpCharmBody,
+            );
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: HP_PEG_OFFSET, z: 0 },
+                ),
+                lastBody, hpCharmBody, true,
             );
         }
 
         // ── Load visuals ──
-        const TOTAL = 1 + RINGS.length + 1; // carabiner + rings (from single load) + charm
+        const TOTAL = 1 + ORANGE_RINGS.length + ZABKA_RINGS.length + HP_RINGS.length + 3; // carabiner + all ring chains + 3 charms
         let loadCount = 0;
         function onLoaded() {
             if (++loadCount === TOTAL) {
                 modelLoaded = true;
                 console.log(`[keychain] ${TOTAL} parts loaded — chain ready`);
+
+                // Init debug tool (press D to activate)
+                const selectables: { label: string; group: THREE.Group; mesh: THREE.Object3D }[] = [];
+                if (carabinerGroup) selectables.push({ label: 'Karabińczyk', group: carabinerGroup, mesh: carabinerGroup.children[0], body: carabinerBody });
+                orangeGroups.forEach((g, i) => g && selectables.push({ label: `Orange ring ${ORANGE_RINGS[i].name}`, group: g, mesh: g.children[0], body: orangeBodies[i] }));
+                zabkaGroups.forEach((g, i) => g && selectables.push({ label: `Żabka ring ${ZABKA_RINGS[i].name}`, group: g, mesh: g.children[0], body: zabkaBodies[i] }));
+                hpGroups.forEach((g, i) => g && selectables.push({ label: `HP ring ${HP_RINGS[i].name}`, group: g, mesh: g.children[0], body: hpBodies[i] }));
+                if (orangeCharmGroup) selectables.push({ label: 'Orange charm', group: orangeCharmGroup, mesh: orangeCharmGroup.children[0], body: orangeCharmBody });
+                if (zabkaCharmGroup) selectables.push({ label: 'Żabka charm', group: zabkaCharmGroup, mesh: zabkaCharmGroup.children[0], body: zabkaCharmBody });
+                if (hpCharmGroup) selectables.push({ label: 'HP charm', group: hpCharmGroup, mesh: hpCharmGroup.children[0], body: hpCharmBody });
+                initKeychainDebug({ scene, camera, renderer, mainGroup, selectables });
             }
         }
 
@@ -288,7 +462,7 @@ export function initThreeScene() {
 
         // Orange charm — translucent tinted resin (Beer-Lambert volumetric absorption)
         loader.load(basePath + 'Orange.glb', (gltf) => {
-            charmGroup = new THREE.Group();
+            orangeCharmGroup = new THREE.Group();
             const mesh = gltf.scene;
 
             // ── Polished acrylic — beer-lambert orange resin ──
@@ -332,33 +506,99 @@ export function initThreeScene() {
             innerCore.position.set(0, -0.48, 0.05);
             mesh.add(innerCore);
 
-            mesh.position.y = 0.456;
-            mesh.position.z = -0.093;
+            // ── Pozycja i obrót wizualny charmu Orange ──
+            mesh.position.set(-0.695, 0.978, -0.192);
+            mesh.rotation.set(-164.6 * Math.PI/180, 29.0 * Math.PI/180, -139.3 * Math.PI/180);
 
-            charmGroup.add(mesh);
-            mainGroup.add(charmGroup);
+            orangeCharmGroup.add(mesh);
+            mainGroup.add(orangeCharmGroup);
             onLoaded();
         });
 
-        // Ring visuals — load CircleBig.glb once, clone for each ring
+        // Zabka charm — matte rubber
+        loader.load(basePath + 'Zabka.glb', (gltf) => {
+            zabkaCharmGroup = new THREE.Group();
+            const mesh = gltf.scene;
+
+            // Keep original palette textures from GLB — just tweak for rubber look
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (!m.isMesh) return;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                mats.forEach(mat => {
+                    if (mat && 'roughness' in mat) {
+                        (mat as THREE.MeshStandardMaterial).roughness = 0.85;
+                        (mat as THREE.MeshStandardMaterial).metalness = 0.0;
+                        (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+                    }
+                });
+            });
+
+            // ── Pozycja i obrót wizualny charmu Żabka ──
+            mesh.position.set(0.020, 0.648, 0.114);
+            mesh.rotation.set(169.6 * Math.PI/180, 47.8 * Math.PI/180, 177.7 * Math.PI/180);
+
+            zabkaCharmGroup.add(mesh);
+            mainGroup.add(zabkaCharmGroup);
+            onLoaded();
+        });
+
+        // HP charm — brushed metal (keep original materials from GLB)
+        loader.load(basePath + 'HP.glb', (gltf) => {
+            hpCharmGroup = new THREE.Group();
+            const mesh = gltf.scene;
+
+            // Keep original Metal + Metal_Inside materials from GLB
+            // Just ensure double-sided rendering
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (!m.isMesh) return;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                mats.forEach(mat => {
+                    if (mat) (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+                });
+            });
+
+            // ── Pozycja i obrót wizualny charmu HP ──
+            mesh.position.set(-0.120, 0.870, 0.157);
+            mesh.rotation.set(-Math.PI, -35.0 * Math.PI/180, -Math.PI);
+
+            hpCharmGroup.add(mesh);
+            mainGroup.add(hpCharmGroup);
+            onLoaded();
+        });
+
+        // Ring visuals — load CircleBig.glb once, clone for all chains
         loader.load(basePath + 'CircleBig.glb', (gltf) => {
-            RINGS.forEach((ring, i) => {
+            // Helper: load ring visual from definition
+            function loadRingVisual(ring: typeof ORANGE_RINGS[0], groups: THREE.Group[], i: number) {
                 const group = new THREE.Group();
                 const mesh = gltf.scene.clone();
-
-                if (ring.plane === 'yz') {
-                    mesh.rotation.y = Math.PI / 2;
+                const d2r = Math.PI / 180;
+                // If meshRot provided, use full euler. Otherwise plane+rotY.
+                if ('meshRot' in ring && (ring as any).meshRot) {
+                    const mr = (ring as any).meshRot as [number,number,number];
+                    mesh.rotation.set(mr[0] * d2r, mr[1] * d2r, mr[2] * d2r);
+                } else {
+                    if (ring.plane === 'yz') mesh.rotation.y = Math.PI / 2;
+                    if (ring.rotY) mesh.rotation.y += ring.rotY * d2r;
                 }
-                mesh.position.y = -0.41 * ring.scale;
+                mesh.position.set(ring.meshPos[0], ring.meshPos[1], ring.meshPos[2]);
                 mesh.scale.setScalar(ring.scale);
-
                 group.add(mesh);
                 mainGroup.add(group);
-                chainGroups[i] = group;
+                groups[i] = group;
                 onLoaded();
-            });
+            }
+
+            ORANGE_RINGS.forEach((ring, i) => loadRingVisual(ring, orangeGroups, i));
+            ZABKA_RINGS.forEach((ring, i) => loadRingVisual(ring, zabkaGroups, i));
+            HP_RINGS.forEach((ring, i) => loadRingVisual(ring, hpGroups, i));
         });
     });
+
+    // Pre-allocated quaternion for Zabka 90° rotation
+    // Zabka charm rotation baked into mesh.rotation.y at load time (-40.5°)
 
     // ── Projection (pre-allocated vectors to avoid per-frame GC) ──
     const _projV = new THREE.Vector3();
@@ -425,13 +665,13 @@ export function initThreeScene() {
         return cx >= hitX0 && cx <= hitX1 && cy >= hitY0 && cy <= hitY1;
     }
 
-    window.addEventListener('mousedown', (e) => { if (hitTest(e.clientX,e.clientY)) { isDragging=true; lastDragX=e.clientX; dragVelocity=0; document.body.style.cursor='grabbing'; e.preventDefault(); } });
-    window.addEventListener('mousemove', (e) => { if (isDragging) { const d=e.clientX-lastDragX; dragRotY+=d*.008; dragVelocity=d*.008; lastDragX=e.clientX; } else { const o=hitTest(e.clientX,e.clientY); if(o!==isHovering){isHovering=o;document.body.style.cursor=o?'grab':'';} } });
-    window.addEventListener('mouseup', () => { if (isDragging) { isDragging=false; document.body.style.cursor=isHovering?'grab':''; } });
-    window.addEventListener('wheel', (e) => { if (!hitTest(e.clientX,e.clientY)) return; if (Math.abs(e.deltaX)>Math.abs(e.deltaY)) { const d=e.deltaX*.003; if(Math.abs(d)>.001){e.preventDefault();dragRotY+=d;dragVelocity=d;} } else if(e.ctrlKey) e.preventDefault(); }, { passive: false });
-    window.addEventListener('touchstart', (e) => { if (e.touches.length===2) { touchActive=true; touchStartX=(e.touches[0].clientX+e.touches[1].clientX)/2; dragVelocity=0; } }, { passive: true });
-    window.addEventListener('touchmove', (e) => { if (touchActive&&e.touches.length===2) { const cx=(e.touches[0].clientX+e.touches[1].clientX)/2; const d=cx-touchStartX; dragRotY+=d*.006; dragVelocity=d*.006; touchStartX=cx; } }, { passive: true });
-    window.addEventListener('touchend', () => { touchActive=false; });
+    window.addEventListener('mousedown', (e) => { if (isDebugMode) return; if (hitTest(e.clientX,e.clientY)) { isDragging=true; lastDragX=e.clientX; dragVelocity=0; document.body.style.cursor='grabbing'; e.preventDefault(); } });
+    window.addEventListener('mousemove', (e) => { if (isDebugMode) return; if (isDragging) { const d=e.clientX-lastDragX; dragRotY+=d*.008; dragVelocity=d*.008; lastDragX=e.clientX; } else { const o=hitTest(e.clientX,e.clientY); if(o!==isHovering){isHovering=o;document.body.style.cursor=o?'grab':'';} } });
+    window.addEventListener('mouseup', () => { if (isDebugMode) return; if (isDragging) { isDragging=false; document.body.style.cursor=isHovering?'grab':''; } });
+    window.addEventListener('wheel', (e) => { if (isDebugMode) return; if (!hitTest(e.clientX,e.clientY)) return; if (Math.abs(e.deltaX)>Math.abs(e.deltaY)) { const d=e.deltaX*.003; if(Math.abs(d)>.001){e.preventDefault();dragRotY+=d;dragVelocity=d;} } else if(e.ctrlKey) e.preventDefault(); }, { passive: false });
+    window.addEventListener('touchstart', (e) => { if (isDebugMode) return; if (e.touches.length===2) { touchActive=true; touchStartX=(e.touches[0].clientX+e.touches[1].clientX)/2; dragVelocity=0; } }, { passive: true });
+    window.addEventListener('touchmove', (e) => { if (isDebugMode) return; if (touchActive&&e.touches.length===2) { const cx=(e.touches[0].clientX+e.touches[1].clientX)/2; const d=cx-touchStartX; dragRotY+=d*.006; dragVelocity=d*.006; touchStartX=cx; } }, { passive: true });
+    window.addEventListener('touchend', () => { if (isDebugMode) return; touchActive=false; });
 
     // Smoothed position/scale — always lerp, never snap (except first frame)
     let smoothX = 0, smoothY = 0, smoothScale = 0.34;
@@ -453,62 +693,96 @@ export function initThreeScene() {
     function animate() {
         requestAnimationFrame(animate);
         if (!modelLoaded || !world) return;
-        // Skip physics + render when completely off-screen
-        if (!sceneVisible) return;
+        // Skip physics + render when completely off-screen (but not in debug mode)
+        if (!sceneVisible && !isDebugMode) return;
 
         const time = Date.now() * 0.001;
 
-        if (!isDragging && !touchActive) { dragRotY += dragVelocity; dragVelocity *= 0.95; if (Math.abs(dragVelocity) < .0001) dragVelocity = 0; }
-        // Idle spin: ramps in after detach (progress > 0.3), always apply drag
-        const spinAmount = animState.progress <= 0.3 ? 0 : Math.min((animState.progress - 0.3) / 0.2, 1);
-        mainGroup.rotation.y += 0.0013 * spinAmount + dragVelocity;
-
-        mainRotVelocity = mainGroup.rotation.y - prevMainRotY;
-        prevMainRotY = mainGroup.rotation.y;
-
-        if (charmBody) {
+        // ── Drag/spin + mouse impulse (disabled in debug mode) ──
+        if (!isDebugMode) {
+            if (!isDragging && !touchActive) { dragRotY += dragVelocity; dragVelocity *= 0.95; if (Math.abs(dragVelocity) < .0001) dragVelocity = 0; }
+            const spinAmount = animState.progress <= 0.3 ? 0 : Math.min((animState.progress - 0.3) / 0.2, 1);
+            mainGroup.rotation.y += 0.0013 * spinAmount + dragVelocity;
+            mainRotVelocity = mainGroup.rotation.y - prevMainRotY;
+            prevMainRotY = mainGroup.rotation.y;
             const ix = (mouseX * PHYS.MOUSE_FORCE - mainRotVelocity * PHYS.INERTIA_FORCE) * (1/60);
             const iz = mouseY * PHYS.MOUSE_FORCE * (1/60);
-            charmBody.applyImpulse({ x: ix, y: 0, z: iz }, true);
+            if (orangeCharmBody) orangeCharmBody.applyImpulse({ x: ix, y: 0, z: iz }, true);
+            if (zabkaCharmBody) zabkaCharmBody.applyImpulse({ x: ix, y: 0, z: iz }, true);
         }
 
+        // ── Gravity with 3D spread (ALWAYS — same in debug and normal) ──
+        {
+            const G = 9.82 * (1/60);
+
+            // Orange: lewo + do przodu
+            const OA = -15 * Math.PI / 180;
+            const og = { x: Math.sin(OA) * G, y: -Math.cos(OA) * G, z: 0.02 * G };
+            orangeBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: og.x*m, y: og.y*m, z: og.z*m }, true); });
+            if (orangeCharmBody) { const m = orangeCharmBody.mass(); orangeCharmBody.applyImpulse({ x: og.x*m, y: og.y*m, z: og.z*m }, true); }
+
+            // Zabka: prawo + do przodu
+            const ZA = 30 * Math.PI / 180;
+            const zg = { x: Math.sin(ZA) * G, y: -Math.cos(ZA) * G, z: -0.02 * G };
+            zabkaBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: zg.x*m, y: zg.y*m, z: zg.z*m }, true); });
+            if (zabkaCharmBody) { const m = zabkaCharmBody.mass(); zabkaCharmBody.applyImpulse({ x: zg.x*m, y: zg.y*m, z: zg.z*m }, true); }
+
+            // HP: lekko prawo + do tyłu (Z separation od Orange i Zabka)
+            const HA = 5 * Math.PI / 180;
+            const hg = { x: Math.sin(HA) * G, y: -Math.cos(HA) * G, z: -0.06 * G };
+            hpBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: hg.x*m, y: hg.y*m, z: hg.z*m }, true); });
+            if (hpCharmBody) { const m = hpCharmBody.mass(); hpCharmBody.applyImpulse({ x: hg.x*m, y: hg.y*m, z: hg.z*m }, true); }
+
+            if (carabinerBody) { const m = carabinerBody.mass(); carabinerBody.applyImpulse({ x: 0, y: -G * m, z: 0 }, true); }
+        }
+
+        // ── Physics step + sync (ALWAYS — same in debug and normal) ──
         world.timestep = 1 / 60;
         world.step();
 
-        // Sync all bodies → Three.js
         if (carabinerBody && carabinerGroup) {
-            const p = carabinerBody.translation();
-            const r = carabinerBody.rotation();
-            carabinerGroup.position.set(p.x, p.y, p.z);
-            carabinerGroup.quaternion.set(r.x, r.y, r.z, r.w);
+            const p = carabinerBody.translation(); const r = carabinerBody.rotation();
+            carabinerGroup.position.set(p.x, p.y, p.z); carabinerGroup.quaternion.set(r.x, r.y, r.z, r.w);
         }
-        chainBodies.forEach((body, i) => {
-            const group = chainGroups[i];
-            if (!group) return;
-            const p = body.translation();
-            const r = body.rotation();
-            group.position.set(p.x, p.y, p.z);
-            group.quaternion.set(r.x, r.y, r.z, r.w);
+        orangeBodies.forEach((body, i) => {
+            const group = orangeGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
         });
-        if (charmBody && charmGroup) {
-            const p = charmBody.translation();
-            charmGroup.position.set(p.x, p.y, p.z);
-            const lastRingBody = chainBodies[chainBodies.length - 1];
-            if (lastRingBody) {
-                const r = lastRingBody.rotation();
-                charmGroup.quaternion.set(r.x, r.y, r.z, r.w);
-            }
+        if (orangeCharmBody && orangeCharmGroup) {
+            const p = orangeCharmBody.translation(); orangeCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = orangeBodies[orangeBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); orangeCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
+        }
+        zabkaBodies.forEach((body, i) => {
+            const group = zabkaGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (zabkaCharmBody && zabkaCharmGroup) {
+            const p = zabkaCharmBody.translation(); zabkaCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = zabkaBodies[zabkaBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); zabkaCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
+        }
+        // Sync HP chain
+        hpBodies.forEach((body, i) => {
+            const group = hpGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (hpCharmBody && hpCharmGroup) {
+            const p = hpCharmBody.translation(); hpCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = hpBodies[hpBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); hpCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
         }
 
-        const t = animState.progress;  // 0→1: placeholder → center
-        const s = slideState.progress; // 0→1: center → anchor below projects
-
+        // ── Scroll positioning + visuals (disabled in debug mode) ──
+        if (!isDebugMode) {
+        const t = animState.progress;
+        const s = slideState.progress;
         let tgtX: number, tgtYPos: number, tgtScale: number;
 
-        // --- Determine target position based on phase ---
-
         if (s > 0 && keychainAnchor) {
-            // Phase 3: slide from center to anchor below projects
             const anchorRect = keychainAnchor.getBoundingClientRect();
             if (anchorRect.width > 0 && anchorRect.height > 0) {
                 const anchorWorld = screenToWorld(anchorRect.left + anchorRect.width / 2, anchorRect.top + anchorRect.height / 2);
@@ -518,41 +792,32 @@ export function initThreeScene() {
                 tgtX = gsap.utils.interpolate(0, anchorWorld.x, s);
                 tgtYPos = gsap.utils.interpolate(1.8, anchorWorld.y + anchorOffset, s);
             } else {
-                // Anchor off-screen (content-visibility etc.) — hold at center
                 mainGroup.visible = true;
                 tgtScale = 1.47;
                 tgtX = 0;
                 tgtYPos = 1.8;
             }
         } else if (t >= 1) {
-            // Phase 2: showcase — hold at center, full size
             mainGroup.visible = true;
             tgtScale = 1.47;
             tgtX = 0;
             tgtYPos = 1.8;
         } else {
-            // Phase 1: follow placeholder → fly to center
             const rect = placeholder!.getBoundingClientRect();
-
             if (rect.width === 0 && rect.height === 0) {
                 mainGroup.visible = false;
                 renderer.render(scene, camera);
                 return;
             }
             mainGroup.visible = true;
-
             const sp = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
             const pinnedScale = 0.34;
             const pinnedOffset = 0.6 * pinnedScale;
             tgtScale = gsap.utils.interpolate(pinnedScale, 1.47, t);
             tgtX = gsap.utils.interpolate(sp.x, 0, t);
-            // Use fixed pinnedOffset as start so Y doesn't drift when scale changes during interpolation
             tgtYPos = gsap.utils.interpolate(sp.y + pinnedOffset, 1.8, t);
         }
 
-        // --- Smoothing ---
-        // Minimal lerp (0.5) to eliminate single-frame jitter from screenToWorld,
-        // fast enough to avoid visible lag on scroll direction changes.
         if (firstFrame) {
             smoothX = tgtX; smoothY = tgtYPos; smoothScale = tgtScale;
             firstFrame = false;
@@ -562,32 +827,30 @@ export function initThreeScene() {
             smoothScale += (tgtScale - smoothScale) * 0.5;
         }
 
-        // Levitation only when detached — pinned mode is rock-solid on placeholder
-        const levAmount = Math.min(t * 3, 1); // 0 when pinned, ramps to 1 over first ~33% of detach
+        const levAmount = Math.min(t * 3, 1);
         const levY = Math.sin(time * 0.8) * 0.04 * levAmount;
         const levTiltX = Math.sin(time * 0.5) * 0.03 * levAmount;
         const levTiltZ = Math.cos(time * 0.7) * 0.02 * levAmount;
 
-        // Exit phase: slide up + scale down as Process section approaches
         const ex = exitState.progress;
-        const exitY = ex * 5;       // move up in world units
-        const exitScale = 1 - ex * 0.4; // scale down to 60%
+        const exitY = ex * 5;
+        const exitScale = 1 - ex * 0.4;
 
         mainGroup.scale.setScalar(smoothScale * exitScale);
         mainGroup.position.set(smoothX, smoothY + levY + exitY, 0);
         mainGroup.rotation.x = levTiltX;
         mainGroup.rotation.z = levTiltZ;
 
-        // Hide completely when exit animation done
         if (ex >= 1) { mainGroup.visible = false; }
         else if (t > 0 || ex === 0) { mainGroup.visible = true; }
 
-        // Update hit bounds every 3rd frame (saves traversing scene graph)
         if (++hitBoundsCounter >= 3) {
             hitBoundsCounter = 0;
             updateHitBounds();
         }
+        } // end if (!isDebugMode)
 
+        updateDebug();
         renderer.render(scene, camera);
 
     }
