@@ -298,12 +298,13 @@ export function updateDebug() {
     const rotDelta = parentWorldQuat.clone().multiply(snap_quatInv(childSnapshots[0].initialParentWorldQuat));
 
     childSnapshots.forEach(snap => {
-        // ── Position: enforce world offset ──
-        const targetWorldPos = parentWorldPos.clone().add(snap.worldPosOffset);
+        // ── Position: rotate offset around parent, then apply ──
+        const rotatedOffset = snap.worldPosOffset.clone().applyQuaternion(rotDelta);
+        const targetWorldPos = parentWorldPos.clone().add(rotatedOffset);
         snap.entry.group.updateMatrixWorld(true);
         snap.entry.mesh.position.copy(snap.entry.group.worldToLocal(targetWorldPos));
 
-        // ── Rotation: apply parent's rotation delta ──
+        // ── Rotation: apply parent's rotation delta to child ──
         const targetWorldQuat = rotDelta.clone().multiply(snap.initialChildWorldQuat);
         const groupWorldQuat = snap.entry.group.getWorldQuaternion(new THREE.Quaternion());
         const localQuat = groupWorldQuat.clone().invert().multiply(targetWorldQuat);
@@ -337,6 +338,7 @@ function getChainChildren(entry: Selectable): Selectable[] {
         : (label.includes('Żabka') || label.includes('zabka')) ? 'Żabka'
         : label.includes('HP') ? 'HP'
         : label.includes('Wella') ? 'Wella'
+        : label.includes('Lidl') ? 'Lidl'
         : null;
     if (!chainId) return [];
 
@@ -350,6 +352,7 @@ function getChainChildren(entry: Selectable): Selectable[] {
             : chainId === 'Żabka' ? (l.includes('Żabka') || l.includes('zabka'))
             : chainId === 'HP' ? l.includes('HP')
             : chainId === 'Wella' ? l.includes('Wella')
+            : chainId === 'Lidl' ? l.includes('Lidl')
             : false;
         if (match) ch.push(items[i]);
     }
