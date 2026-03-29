@@ -56,12 +56,12 @@ const ORANGE_RINGS = [
 const ZABKA_RINGS = [
     { name: 'zbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
       pivotTop: 0.14,  pivotBot: 0.16,  plane: 'yz' as const,
-      rotY: 0, meshRot: [-73.7, -21.5, -77.0] as [number,number,number],
-      meshPos: [-0.775, 0.226, 0.168] as [number,number,number] },
+      rotY: 0, meshRot: [-93.5, 1.0, -135.5] as [number,number,number],
+      meshPos: [-0.714, 0.505, -0.039] as [number,number,number] },
     { name: 'zsmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
       pivotTop: 0.10,  pivotBot: 0.07,  plane: 'xy' as const,
-      rotY: 0, meshRot: [-119.8, -24.7, -95.6] as [number,number,number],
-      meshPos: [-0.979, 0.436, 0.203] as [number,number,number] },
+      rotY: 0, meshRot: [-125.8, 29.2, -126.3] as [number,number,number],
+      meshPos: [-0.888, 0.812, -0.186] as [number,number,number] },
 ];
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -100,6 +100,30 @@ const LIDL_RINGS = [
       pivotTop: 0.08,  pivotBot: 0.06,  plane: 'xy' as const,
       rotY: 0, meshRot: [162.4, 9.2, 129.2] as [number,number,number],
       meshPos: [0.916, 0.110, 0.017] as [number,number,number] },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  SELGROS — 2 ringi na karabińczyku → charm Selgros          ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SELGROS_RINGS = [
+    { name: 'sbig',   R: 0.20, tubeR: 0.025, scale: 0.74, N: 16,
+      pivotTop: 0.14,  pivotBot: 0.14,  plane: 'yz' as const,
+      rotY: 0, meshRot: [115.0, 28.5, -127.0] as [number,number,number],
+      meshPos: [-0.627, 0.044, 0.055] as [number,number,number] },
+    { name: 'ssmall', R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
+      pivotTop: 0.08,  pivotBot: 0.06,  plane: 'xy' as const,
+      rotY: 0, meshRot: [4.7, 57.5, -55.6] as [number,number,number],
+      meshPos: [-0.658, 0.183, 0.237] as [number,number,number] },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ENEA — 1 ring łączący z charmu Selgros → charm Enea        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const ENEA_RINGS = [
+    { name: 'ering',  R: 0.14, tubeR: 0.02,  scale: 0.52, N: 12,
+      pivotTop: 0.08,  pivotBot: 0.06,  plane: 'yz' as const,
+      rotY: 0, meshRot: [125.0, -88.5, -151.5] as [number,number,number],
+      meshPos: [-1.365, 0.651, 0.728] as [number,number,number] },
 ];
 
 // Module-level ref for programmatic exit
@@ -212,6 +236,18 @@ export function initThreeScene() {
     let lidlCharmBody: RAPIER.RigidBody;
     let lidlCharmGroup: THREE.Group;
 
+    // Selgros chain (2 rings on carabiner → charm)
+    const selgrosBodies: RAPIER.RigidBody[] = [];
+    const selgrosGroups: THREE.Group[] = [];
+    let selgrosCharmBody: RAPIER.RigidBody;
+    let selgrosCharmGroup: THREE.Group;
+
+    // Enea chain (1 ring from Selgros charm → Enea charm)
+    const eneaBodies: RAPIER.RigidBody[] = [];
+    const eneaGroups: THREE.Group[] = [];
+    let eneaCharmBody: RAPIER.RigidBody;
+    let eneaCharmGroup: THREE.Group;
+
     let modelLoaded = false;
     mainGroup.rotation.y = Math.PI;
     let prevMainRotY = Math.PI;
@@ -224,6 +260,8 @@ export function initThreeScene() {
     const HP_GROUP        = (0x0008 << 16) | 0x0000; // no collisions
     const WELLA_GROUP     = (0x0010 << 16) | 0x0000; // no collisions
     const LIDL_GROUP      = (0x0020 << 16) | 0x0000; // no collisions
+    const SELGROS_GROUP   = (0x0040 << 16) | 0x0000; // no collisions
+    const ENEA_GROUP      = (0x0080 << 16) | 0x0000; // no collisions
 
     function addCarabinerColliders(body: RAPIER.RigidBody) {
         const N = 28, semiA = 0.35, semiB = 0.80, tubeR = 0.055, centerY = 0.05;
@@ -543,8 +581,78 @@ export function initThreeScene() {
             );
         }
 
+        // ── Selgros chain: 2 rings on carabiner ──
+        createRingChain(SELGROS_RINGS, carabinerBody,
+            { x: 0.15, y: -0.65, z: 0.12 },
+            selgrosBodies, SELGROS_GROUP);
+
+        const SELGROS_PEG_OFFSET = 0.784;
+        {
+            const lastRing = SELGROS_RINGS[SELGROS_RINGS.length - 1];
+            const lastBody = selgrosBodies[selgrosBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - SELGROS_PEG_OFFSET;
+
+            selgrosCharmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(lastPos.x, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.46, 0.78, 0.06)
+                    .setCollisionGroups(SELGROS_GROUP)
+                    .setDensity(1.0).setFriction(0.0).setRestitution(0.0),
+                selgrosCharmBody,
+            );
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: SELGROS_PEG_OFFSET, z: 0 },
+                ),
+                lastBody, selgrosCharmBody, true,
+            );
+        }
+
+        // ── Enea: 1 ring hanging from Selgros CHARM body (bottom) ──
+        createRingChain(ENEA_RINGS, selgrosCharmBody,
+            { x: 0, y: -0.784, z: 0 },  // bottom of Selgros charm
+            eneaBodies, ENEA_GROUP);
+
+        const ENEA_PEG_OFFSET = 0.582;
+        {
+            const lastRing = ENEA_RINGS[ENEA_RINGS.length - 1];
+            const lastBody = eneaBodies[eneaBodies.length - 1];
+            const lastPos = lastBody.translation();
+            const jointWorldY = lastPos.y + (-lastRing.pivotBot);
+            const charmCenterY = jointWorldY - ENEA_PEG_OFFSET;
+
+            eneaCharmBody = world.createRigidBody(
+                RAPIER.RigidBodyDesc.dynamic()
+                    .setTranslation(lastPos.x, charmCenterY, 0)
+                    .setLinearDamping(PHYS.LINEAR_DAMPING)
+                    .setAngularDamping(PHYS.ANGULAR_DAMPING)
+                    .setCcdEnabled(true)
+            );
+            world.createCollider(
+                RAPIER.ColliderDesc.cuboid(0.58, 0.58, 0.04)
+                    .setCollisionGroups(ENEA_GROUP)
+                    .setDensity(1.0).setFriction(0.0).setRestitution(0.0),
+                eneaCharmBody,
+            );
+            world.createImpulseJoint(
+                RAPIER.JointData.spherical(
+                    { x: 0, y: -lastRing.pivotBot, z: 0 },
+                    { x: 0, y: ENEA_PEG_OFFSET, z: 0 },
+                ),
+                lastBody, eneaCharmBody, true,
+            );
+        }
+
         // ── Load visuals ──
-        const TOTAL = 1 + ORANGE_RINGS.length + ZABKA_RINGS.length + HP_RINGS.length + WELLA_RINGS.length + LIDL_RINGS.length + 5; // carabiner + all ring chains + 5 charms
+        const TOTAL = 1 + ORANGE_RINGS.length + ZABKA_RINGS.length + HP_RINGS.length + WELLA_RINGS.length + LIDL_RINGS.length + SELGROS_RINGS.length + ENEA_RINGS.length + 7; // carabiner + all rings + 7 charms
         let loadCount = 0;
         function onLoaded() {
             if (++loadCount === TOTAL) {
@@ -559,11 +667,15 @@ export function initThreeScene() {
                 hpGroups.forEach((g, i) => g && selectables.push({ label: `HP ring ${HP_RINGS[i].name}`, group: g, mesh: g.children[0], body: hpBodies[i] }));
                 wellaGroups.forEach((g, i) => g && selectables.push({ label: `Wella ring ${WELLA_RINGS[i].name}`, group: g, mesh: g.children[0], body: wellaBodies[i] }));
                 lidlGroups.forEach((g, i) => g && selectables.push({ label: `Lidl ring ${LIDL_RINGS[i].name}`, group: g, mesh: g.children[0], body: lidlBodies[i] }));
+                selgrosGroups.forEach((g, i) => g && selectables.push({ label: `Selgros ring ${SELGROS_RINGS[i].name}`, group: g, mesh: g.children[0], body: selgrosBodies[i] }));
+                eneaGroups.forEach((g, i) => g && selectables.push({ label: `Enea ring ${ENEA_RINGS[i].name}`, group: g, mesh: g.children[0], body: eneaBodies[i] }));
                 if (orangeCharmGroup) selectables.push({ label: 'Orange charm', group: orangeCharmGroup, mesh: orangeCharmGroup.children[0], body: orangeCharmBody });
                 if (zabkaCharmGroup) selectables.push({ label: 'Żabka charm', group: zabkaCharmGroup, mesh: zabkaCharmGroup.children[0], body: zabkaCharmBody });
                 if (hpCharmGroup) selectables.push({ label: 'HP charm', group: hpCharmGroup, mesh: hpCharmGroup.children[0], body: hpCharmBody });
                 if (wellaCharmGroup) selectables.push({ label: 'Wella charm', group: wellaCharmGroup, mesh: wellaCharmGroup.children[0], body: wellaCharmBody });
                 if (lidlCharmGroup) selectables.push({ label: 'Lidl charm', group: lidlCharmGroup, mesh: lidlCharmGroup.children[0], body: lidlCharmBody });
+                if (selgrosCharmGroup) selectables.push({ label: 'Selgros charm', group: selgrosCharmGroup, mesh: selgrosCharmGroup.children[0], body: selgrosCharmBody });
+                if (eneaCharmGroup) selectables.push({ label: 'Enea charm', group: eneaCharmGroup, mesh: eneaCharmGroup.children[0], body: eneaCharmBody });
                 initKeychainDebug({ scene, camera, renderer, mainGroup, selectables });
             }
         }
@@ -652,8 +764,8 @@ export function initThreeScene() {
             });
 
             // ── Pozycja i obrót wizualny charmu Żabka ──
-            mesh.position.set(-0.893, 1.215, 0.224);
-            mesh.rotation.set(-24.7 * Math.PI/180, -3.8 * Math.PI/180, -65.0 * Math.PI/180);
+            mesh.position.set(-0.829, 1.561, -0.096);
+            mesh.rotation.set(-52.5 * Math.PI/180, -32.8 * Math.PI/180, -123.2 * Math.PI/180);
 
             zabkaCharmGroup.add(mesh);
             mainGroup.add(zabkaCharmGroup);
@@ -721,6 +833,41 @@ export function initThreeScene() {
             onLoaded();
         });
 
+        // Selgros charm — keep original materials
+        loader.load(basePath + 'Selgros.glb', (gltf) => {
+            selgrosCharmGroup = new THREE.Group();
+            const mesh = gltf.scene;
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (!m.isMesh) return;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                mats.forEach(mat => { if (mat) (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide; });
+            });
+            mesh.position.set(-0.614, 1.091, 0.189);
+            mesh.rotation.set(-22.5 * Math.PI/180, -8.5 * Math.PI/180, -32.0 * Math.PI/180);
+            selgrosCharmGroup.add(mesh);
+            mainGroup.add(selgrosCharmGroup);
+            onLoaded();
+        });
+
+        // Enea charm — keep original Metal + Metal_Inside materials
+        loader.load(basePath + 'Enea.glb', (gltf) => {
+            eneaCharmGroup = new THREE.Group();
+            const mesh = gltf.scene;
+            mesh.traverse(child => {
+                const m = child as THREE.Mesh;
+                if (!m.isMesh) return;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                mats.forEach(mat => { if (mat) (mat as THREE.MeshStandardMaterial).side = THREE.DoubleSide; });
+            });
+            mesh.position.set(-1.329, 1.244, 0.511);
+            mesh.rotation.set(-46.0 * Math.PI/180, 15.0 * Math.PI/180, -46.0 * Math.PI/180);
+            mesh.scale.setScalar(0.80);
+            eneaCharmGroup.add(mesh);
+            mainGroup.add(eneaCharmGroup);
+            onLoaded();
+        });
+
         // Ring visuals — load CircleBig.glb once, clone for all chains
         loader.load(basePath + 'CircleBig.glb', (gltf) => {
             // Helper: load ring visual from definition
@@ -749,6 +896,8 @@ export function initThreeScene() {
             HP_RINGS.forEach((ring, i) => loadRingVisual(ring, hpGroups, i));
             WELLA_RINGS.forEach((ring, i) => loadRingVisual(ring, wellaGroups, i));
             LIDL_RINGS.forEach((ring, i) => loadRingVisual(ring, lidlGroups, i));
+            SELGROS_RINGS.forEach((ring, i) => loadRingVisual(ring, selgrosGroups, i));
+            ENEA_RINGS.forEach((ring, i) => loadRingVisual(ring, eneaGroups, i));
         });
     });
 
@@ -893,9 +1042,17 @@ export function initThreeScene() {
             const wg = { x: Math.sin(WA) * G, y: -Math.cos(WA) * G, z: 0.04 * G };
             wellaBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); });
             if (wellaCharmBody) { const m = wellaCharmBody.mass(); wellaCharmBody.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); }
-            // Lidl shares Wella's gravity direction (hangs from Wella big ring)
+            // Lidl shares Wella's gravity direction
             lidlBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); });
             if (lidlCharmBody) { const m = lidlCharmBody.mass(); lidlCharmBody.applyImpulse({ x: wg.x*m, y: wg.y*m, z: wg.z*m }, true); }
+
+            // Selgros + Enea: right + slightly back
+            const SA = 15 * Math.PI / 180;
+            const sg = { x: Math.sin(SA) * G, y: -Math.cos(SA) * G, z: -0.03 * G };
+            selgrosBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: sg.x*m, y: sg.y*m, z: sg.z*m }, true); });
+            if (selgrosCharmBody) { const m = selgrosCharmBody.mass(); selgrosCharmBody.applyImpulse({ x: sg.x*m, y: sg.y*m, z: sg.z*m }, true); }
+            eneaBodies.forEach(b => { const m = b.mass(); b.applyImpulse({ x: sg.x*m, y: sg.y*m, z: sg.z*m }, true); });
+            if (eneaCharmBody) { const m = eneaCharmBody.mass(); eneaCharmBody.applyImpulse({ x: sg.x*m, y: sg.y*m, z: sg.z*m }, true); }
 
             if (carabinerBody) { const m = carabinerBody.mass(); carabinerBody.applyImpulse({ x: 0, y: -G * m, z: 0 }, true); }
         }
@@ -960,6 +1117,28 @@ export function initThreeScene() {
             const p = lidlCharmBody.translation(); lidlCharmGroup.position.set(p.x, p.y, p.z);
             const lastBody = lidlBodies[lidlBodies.length - 1];
             if (lastBody) { const r = lastBody.rotation(); lidlCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
+        }
+        // Sync Selgros chain
+        selgrosBodies.forEach((body, i) => {
+            const group = selgrosGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (selgrosCharmBody && selgrosCharmGroup) {
+            const p = selgrosCharmBody.translation(); selgrosCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = selgrosBodies[selgrosBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); selgrosCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
+        }
+        // Sync Enea chain (hangs from Selgros charm)
+        eneaBodies.forEach((body, i) => {
+            const group = eneaGroups[i]; if (!group) return;
+            const p = body.translation(); const r = body.rotation();
+            group.position.set(p.x, p.y, p.z); group.quaternion.set(r.x, r.y, r.z, r.w);
+        });
+        if (eneaCharmBody && eneaCharmGroup) {
+            const p = eneaCharmBody.translation(); eneaCharmGroup.position.set(p.x, p.y, p.z);
+            const lastBody = eneaBodies[eneaBodies.length - 1];
+            if (lastBody) { const r = lastBody.rotation(); eneaCharmGroup.quaternion.set(r.x, r.y, r.z, r.w); }
         }
 
         // ── Scroll positioning + visuals (disabled in debug mode) ──

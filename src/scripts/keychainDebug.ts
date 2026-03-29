@@ -339,6 +339,8 @@ function getChainChildren(entry: Selectable): Selectable[] {
         : label.includes('HP') ? 'HP'
         : label.includes('Wella') ? 'Wella'
         : label.includes('Lidl') ? 'Lidl'
+        : label.includes('Selgros') ? 'Selgros'
+        : label.includes('Enea') ? 'Enea'
         : null;
     if (!chainId) return [];
 
@@ -353,6 +355,8 @@ function getChainChildren(entry: Selectable): Selectable[] {
             : chainId === 'HP' ? l.includes('HP')
             : chainId === 'Wella' ? l.includes('Wella')
             : chainId === 'Lidl' ? l.includes('Lidl')
+            : chainId === 'Selgros' ? (l.includes('Selgros') || l.includes('Enea'))
+            : chainId === 'Enea' ? l.includes('Enea')
             : false;
         if (match) ch.push(items[i]);
     }
