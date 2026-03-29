@@ -5,6 +5,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import gsap from 'gsap';
 import 'gsap/ScrollTrigger';
+// Debug tool — always imported for isDebugMode checks in animate loop,
+// but lil-gui/TransformControls/OrbitControls only loaded when D is pressed (lazy in keychainDebug.ts)
 import { initKeychainDebug, updateDebug, isPhysPaused, isDebugMode } from './keychainDebug';
 
 /*
@@ -920,9 +922,9 @@ export function initThreeScene() {
     // Phase 2: hold at center (20%–40%) — showcase moment, brelok alone on screen
     // (no animation needed — just holds position)
 
-    // Phase 3: slide down to anchor below projects (40%–85% of intro scroll)
+    // Phase 3: slide down through intro + ft-section (keychain travels with sticky title)
     const slideState = { progress: 0 };
-    gsap.to(slideState, { progress: 1, scrollTrigger: { trigger: '#intro', start: '25% top', end: '90% top', scrub: 0.15 } });
+    gsap.to(slideState, { progress: 1, scrollTrigger: { trigger: '#intro', start: '25% top', endTrigger: '#ft-section', end: 'bottom top', scrub: 0.15 } });
 
     // Phase 4: exit — fade out before Process section
     const exitState = { progress: 0 };
@@ -930,7 +932,7 @@ export function initThreeScene() {
     _mainGroup = mainGroup;
     gsap.to(exitState, { progress: 1, scrollTrigger: { trigger: '#process', start: 'top bottom', end: 'top 40%', scrub: 0.15 } });
 
-    const keychainAnchor = document.getElementById('keychain-anchor');
+    const keychainAnchor = document.getElementById('ft-section') || document.getElementById('keychain-anchor');
 
     let mouseX = 0, mouseY = 0;
     window.addEventListener('mousemove', (e) => { mouseX = (e.clientX / window.innerWidth) - 0.5; mouseY = (e.clientY / window.innerHeight) - 0.5; });
@@ -1150,7 +1152,8 @@ export function initThreeScene() {
         if (s > 0 && keychainAnchor) {
             const anchorRect = keychainAnchor.getBoundingClientRect();
             if (anchorRect.width > 0 && anchorRect.height > 0) {
-                const anchorWorld = screenToWorld(anchorRect.left + anchorRect.width / 2, anchorRect.top + anchorRect.height / 2);
+                // Target: top of ft-section (not center), clamped to stay in viewport
+                const anchorWorld = screenToWorld(anchorRect.left + anchorRect.width / 2, Math.min(anchorRect.top, window.innerHeight * 0.65));
                 const anchorOffset = 0.6 * 1.47;
                 mainGroup.visible = true;
                 tgtScale = 1.47;

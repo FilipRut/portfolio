@@ -97,7 +97,7 @@ const featured = projects.slice(0, 6);
 
         <!-- Floating thumbnail that follows cursor on tile hover -->
         <div id="tile-preview" class="tile-preview">
-            <img id="tile-preview-img" class="tile-preview-img" src="" alt="" />
+            <img id="tile-preview-img" class="tile-preview-img" src="" alt="Project preview" />
         </div>
 
         <!-- Keychain 3D anchor — below projects, 3D slides here after detach -->
@@ -108,7 +108,7 @@ const featured = projects.slice(0, 6);
 
 <style>
     #intro {
-        min-height: 220vh;
+        min-height: 0;
         padding: clamp(1.5rem, 1rem + 3vw, 4rem);
     }
 
@@ -416,8 +416,8 @@ const featured = projects.slice(0, 6);
     /* 3D anchor below projects */
     .intro-keychain-anchor {
         width: 100%;
-        height: clamp(4rem, 3rem + 2vw, 8rem);
-        margin-top: calc(30vh + 2rem);
+        height: clamp(2rem, 1.5rem + 1vw, 3rem);
+        margin-top: 2rem;
         pointer-events: none;
     }
 

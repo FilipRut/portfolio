@@ -6,6 +6,7 @@ import ChatOverlay from '../components/ChatOverlay.astro';
 import Intro from '../components/Intro.astro';
 import Process from '../components/Process.astro';
 import AboutMe from '../components/AboutMe.astro';
+import Testimonials from '../components/Testimonials.astro';
 import { getCollection } from 'astro:content';
 
 const projects = (await getCollection('projects'))
@@ -32,6 +33,8 @@ const projects = (await getCollection('projects'))
 
 	<!-- Global Three.js Container for transitions -->
 	<div id="global-three-container" role="img" aria-label="Interactive 3D keychain animation"></div>
+
+	<!-- Floating title moved to ft-section between Intro and Testimonials -->
 
 	<!-- Fixed logo — appears after hero, letters draw on/off via stroke masks -->
 	<a id="site-logo" href="/" class="site-logo" aria-label="RUT — back to top">
@@ -67,6 +70,20 @@ const projects = (await getCollection('projects'))
 	<Prompter />
 	<ChatOverlay />
 	<Intro projects={projects} />
+
+	<!-- Floating title — sticky titles travel through this wrapper -->
+	<div id="ft-section" class="ft-section">
+		<div id="floating-title-left" class="floating-title ft-left" aria-hidden="true">
+			<span class="ft-line1" id="ft-line1"></span>
+			<span class="ft-line2" id="ft-line2"></span>
+		</div>
+		<div id="floating-title-right" class="floating-title ft-right" aria-hidden="true">
+			<span class="ft-word1" id="ft-word1"></span>
+			<span class="ft-word2" id="ft-word2"></span>
+		</div>
+	</div>
+
+	<Testimonials />
 	<AboutMe />
 <Process />
 
@@ -75,7 +92,39 @@ const projects = (await getCollection('projects'))
 			position: fixed;
 			inset: 0;
 			pointer-events: none;
-			z-index: 20; /* High enough to be above backgrounds */
+			z-index: 20;
+		}
+
+		.ft-section {
+			position: relative;
+			height: 120vh;
+			pointer-events: none;
+			padding-left: clamp(1.5rem, 1rem + 3vw, 4rem);
+			padding-right: clamp(1.5rem, 1rem + 3vw, 4rem);
+		}
+		.floating-title {
+			position: sticky;
+			z-index: 15;
+			font-family: 'Inter Tight', sans-serif;
+			font-size: clamp(41px, min(13.6vh, 8.5vw), 226px);
+			font-weight: 500;
+			color: #171717;
+			pointer-events: none;
+			opacity: 0;
+			line-height: 0.9;
+			letter-spacing: -0.02em;
+		}
+		.ft-left {
+			top: 35%;
+			text-align: left;
+		}
+		.ft-right {
+			top: 65%;
+			text-align: right;
+			margin-left: auto;
+		}
+		.ft-line1, .ft-line2, .ft-word1, .ft-word2 {
+			display: block;
 		}
 		#global-three-container canvas {
 			width: 100%;

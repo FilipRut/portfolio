@@ -13,5 +13,9 @@ export function initClock() {
     }
 
     updateHeroClock();
-    setInterval(updateHeroClock, 1000);
+    let clockId = setInterval(updateHeroClock, 1000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { clearInterval(clockId); }
+        else { updateHeroClock(); clockId = setInterval(updateHeroClock, 1000); }
+    });
 }

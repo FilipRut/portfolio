@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import { initClock } from './clock';
 import { initMatrixCursor } from './matrixCursor';
 import { initPlaceholder } from './placeholder';
@@ -7,7 +8,7 @@ import { initHeroGallery } from './gallery';
 import { initBuddy } from './buddy';
 import { initMapTooltip } from './map-tooltip';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
 
 gsap.ticker.lagSmoothing(0);
 gsap.config({ force3D: true });
@@ -263,6 +264,154 @@ function init() {
             scrollTrigger: { trigger: '#intro', start: 'top 80%', once: true },
         }
     );
+
+    /* ── Floating title behind keychain — ScrambleText ── */
+    const ftLeft = document.getElementById('floating-title-left');
+    const ftRight = document.getElementById('floating-title-right');
+    const ftLine1 = document.getElementById('ft-line1');
+    const ftLine2 = document.getElementById('ft-line2');
+    const ftWord1 = document.getElementById('ft-word1');
+    const ftWord2 = document.getElementById('ft-word2');
+    if (ftLeft && ftRight && ftLine1 && ftLine2 && ftWord1 && ftWord2) {
+        // Paired phrases: [line1, line2, word1, word2]
+        // [line1, line2, word1, word2] — single words go to word2 (bottom), word1 empty
+        const pairs = [
+            ['Crafting',  'products for',   '',          'startups'],
+            ['Designing', 'systems for',    '',          'enterprise'],
+            ['Building',  'interfaces for', 'digital',   'agencies'],
+            ['Shipping',  'prototypes for', 'marketing', 'teams'],
+            ['Solving',   'problems for',   'product',   'companies'],
+        ];
+        let pairIdx = 0;
+        let initialized = false;
+
+        // Start blank
+        ftLine1.textContent = '';
+        ftLine2.textContent = '';
+        ftWord1.textContent = '';
+        ftWord2.textContent = '';
+
+        // Show both containers when keychain is full-screen
+        gsap.to([ftLeft, ftRight], {
+            opacity: 1,
+            scrollTrigger: { trigger: '#ft-section', start: 'top-=25% bottom', end: 'top 80%', scrub: 0.15 },
+        });
+
+        // Title stays fixed — testimonials scroll over it (higher z-index covers it)
+
+        // Scramble in first pair when 3D scene is fully visible
+        ScrollTrigger.create({
+            trigger: '#ft-section',
+            start: 'top-=25% bottom',
+            once: true,
+            onEnter: () => {
+                if (initialized) return;
+                initialized = true;
+                const [l1, l2, w1, w2] = pairs[0];
+
+                gsap.to(ftLine1, {
+                    duration: 0.96,
+                    scrambleText: { text: l1, chars: 'upperCase', speed: 0.35, revealDelay: 0.35 },
+                });
+                gsap.to(ftLine2, {
+                    duration: 1.2,
+                    delay: 0.48,
+                    scrambleText: { text: l2, chars: 'upperCase', speed: 0.35, revealDelay: 0.35 },
+                });
+                gsap.to(ftWord1, {
+                    duration: 1.2,
+                    delay: 0.96,
+                    scrambleText: { text: w1, chars: 'upperCase', speed: 0.4, revealDelay: 0.25 },
+                });
+                gsap.to(ftWord2, {
+                    duration: 1.2,
+                    delay: 1.1,
+                    scrambleText: { text: w2, chars: 'upperCase', speed: 0.4, revealDelay: 0.25 },
+                    onComplete: startRotation,
+                });
+            },
+        });
+
+        // Rotate all parts together (paused when tab hidden or finalized)
+        let ftVisible = true;
+        let ftFinalized = false;
+        let rotationInterval: ReturnType<typeof setInterval> | null = null;
+        document.addEventListener('visibilitychange', () => { ftVisible = !document.hidden; });
+
+        function startRotation() {
+            rotationInterval = setInterval(() => {
+                if (!ftVisible || ftFinalized) return;
+                pairIdx = (pairIdx + 1) % pairs.length;
+                const [l1, l2, w1, w2] = pairs[pairIdx];
+
+                gsap.to(ftLine1, {
+                    duration: 0.96,
+                    scrambleText: { text: l1, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 },
+                });
+                gsap.to(ftLine2, {
+                    duration: 0.96,
+                    delay: 0.12,
+                    scrambleText: { text: l2, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 },
+                });
+                gsap.to(ftWord1, {
+                    duration: 0.96,
+                    delay: 0.24,
+                    scrambleText: { text: w1, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 },
+                });
+                gsap.to(ftWord2, {
+                    duration: 0.96,
+                    delay: 0.36,
+                    scrambleText: { text: w2, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 },
+                });
+            }, 4200);
+        }
+
+        // When approaching testimonials — scramble to final text and stop rotation
+        // When scrolling back up — restart rotation
+        ScrollTrigger.create({
+            trigger: '#ft-section',
+            start: '70% top',
+            onEnter: () => {
+                ftFinalized = true;
+                if (rotationInterval) { clearInterval(rotationInterval); rotationInterval = null; }
+                // Title stays dark (above dark container, not inside it)
+
+                // Left: "What others say"
+                gsap.to(ftLine1, {
+                    duration: 0.96,
+                    scrambleText: { text: 'What others', chars: 'upperCase', speed: 0.4, revealDelay: 0.15 },
+                });
+                gsap.to(ftLine2, {
+                    duration: 0.96,
+                    delay: 0.15,
+                    scrambleText: { text: 'say', chars: 'upperCase', speed: 0.4, revealDelay: 0.15 },
+                });
+
+                // Right: "about" / "me?"
+                gsap.to(ftWord1, {
+                    duration: 0.96,
+                    delay: 0.3,
+                    scrambleText: { text: '', chars: 'upperCase', speed: 0.4, revealDelay: 0.15 },
+                });
+                gsap.to(ftWord2, {
+                    duration: 0.96,
+                    delay: 0.3,
+                    scrambleText: { text: 'about me?', chars: 'upperCase', speed: 0.4, revealDelay: 0.15 },
+                });
+            },
+            onLeaveBack: () => {
+                // Scrolling back up — restart rotation, restore dark text
+                ftFinalized = false;
+                pairIdx = 0;
+                const [l1, l2, w1, w2] = pairs[0];
+                gsap.to(ftLine1, { duration: 0.96, scrambleText: { text: l1, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 } });
+                gsap.to(ftLine2, { duration: 0.96, delay: 0.12, scrambleText: { text: l2, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 } });
+                gsap.to(ftWord1, { duration: 0.96, delay: 0.24, scrambleText: { text: w1, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 } });
+                gsap.to(ftWord2, { duration: 0.96, delay: 0.36, scrambleText: { text: w2, chars: 'upperCase', speed: 0.5, revealDelay: 0.12 } });
+                if (!rotationInterval) startRotation();
+            },
+        });
+    }
 
     /* ── Show more — seamless transition to /projects ── */
     const showMoreBtn = document.getElementById('show-more-btn');

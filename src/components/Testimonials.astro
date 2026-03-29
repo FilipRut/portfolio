@@ -1,0 +1,624 @@
+---
+const testimonials = [
+    {
+        name: 'Katarzyna Wiśniewska',
+        title: 'Head of Product',
+        company: 'Orange Polska',
+        quote: 'Filip delivered a complete brand redesign in record time. His AI-augmented workflow meant we saw more iterations in a week than we normally get in a month.',
+        stars: 5,
+        size: 'large',
+    },
+    {
+        name: 'Marcin Kowalski',
+        title: 'VP of Engineering',
+        company: 'HP Inc.',
+        quote: 'The dashboard he built transformed how our team monitors print analytics. Clean, fast, intuitive.',
+        stars: 5,
+        size: 'small',
+    },
+    {
+        name: 'Anna Zielińska',
+        title: 'Product Owner',
+        company: 'Żabka',
+        quote: 'Working with Filip felt like having a design team of five. He prototyped, tested, and iterated faster than anyone I\'ve worked with.',
+        stars: 5,
+        size: 'medium',
+    },
+    {
+        name: 'Tomasz Nowak',
+        title: 'CTO',
+        company: 'Enea S.A.',
+        quote: 'His energy app design reduced our support tickets by 40%. Users actually enjoy checking their consumption now.',
+        stars: 4,
+        size: 'medium',
+    },
+    {
+        name: 'Ewa Grabowska',
+        title: 'UX Director',
+        company: 'Lidl',
+        quote: 'The self-checkout kiosk redesign was a game-changer. Filip understood the constraints of retail hardware and still made it beautiful.',
+        stars: 5,
+        size: 'large',
+    },
+    {
+        name: 'Piotr Adamski',
+        title: 'Digital Lead',
+        company: 'Selgros',
+        quote: 'Our B2B platform went from clunky to delightful. Filip has a rare ability to simplify complex workflows.',
+        stars: 5,
+        size: 'small',
+    },
+];
+---
+
+<section id="testimonials" class="w-full" style="padding: 0 clamp(1.5rem, 1rem + 3vw, 4rem);">
+    <div class="testi-section">
+        <!-- Liquid lava lamp background -->
+        <canvas id="lava-canvas" class="lava-canvas"></canvas>
+        <canvas id="ascii-overlay-canvas" class="ascii-overlay-canvas"></canvas>
+        <div class="testi-dim"></div>
+
+        <div class="testi-inner mx-auto" style="max-width: 1440px; position: relative; z-index: 3;">
+        <!-- Heading provided by floating title component -->
+
+        <div class="testi-grid" id="testi-grid">
+            {testimonials.map((t, i) => (
+                <div
+                    class={`testi-card testi-card--${t.size} testi-el`}
+                    data-index={i}
+                    data-speed={0.02 + (i % 3) * 0.015}
+                    style={`--float-phase: ${i * 1.1}; --float-speed: ${0.4 + (i % 4) * 0.15}; --float-amp: ${3 + (i % 3) * 2}px; --offset-x: ${((i * 17) % 30) - 15}px; --offset-y: ${((i * 23) % 20) - 10}px;`}
+                >
+                    <div class="testi-top">
+                        <div class="testi-avatar">
+                            <span class="testi-avatar-letter">{t.name[0]}</span>
+                        </div>
+                        <div class="testi-meta">
+                            <span class="testi-name">{t.name}</span>
+                            <span class="testi-role">{t.title}, {t.company}</span>
+                        </div>
+                    </div>
+                    <div class="testi-stars">
+                        {Array.from({ length: 5 }).map((_, si) => (
+                            <span class={si < t.stars ? 'star star--filled' : 'star'}>&starf;</span>
+                        ))}
+                    </div>
+                    <p class="testi-quote">"{t.quote}"</p>
+                </div>
+            ))}
+        </div>
+    </div>
+    </div>
+</section>
+
+<style>
+    .testi-section {
+        position: relative;
+        background-color: #111111;
+        overflow: hidden;
+        margin-top: 2.5rem;
+        padding: clamp(4rem, 3rem + 4vw, 8rem) clamp(1.5rem, 1rem + 2vw, 3rem);
+        border-radius: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    }
+
+    .lava-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ascii-overlay-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.12;
+        mix-blend-mode: screen;
+    }
+
+    .testi-dim {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .testi-inner {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .testi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(1.25rem, 1rem + 1vw, 2rem);
+    }
+
+    .testi-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px) saturate(120%);
+        -webkit-backdrop-filter: blur(16px) saturate(120%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+        padding: clamp(1.25rem, 1rem + 0.75vw, 2rem);
+        cursor: grab;
+        user-select: none;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        will-change: transform;
+        transform: translate(var(--offset-x), var(--offset-y));
+    }
+
+    .testi-card:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .testi-card:active {
+        cursor: grabbing;
+    }
+
+    .testi-card--large {
+        grid-row: span 1;
+    }
+
+    .testi-top {
+        display: flex;
+        align-items: center;
+        gap: clamp(0.6rem, 0.4rem + 0.4vw, 1rem);
+        margin-bottom: clamp(0.6rem, 0.4rem + 0.3vw, 1rem);
+    }
+
+    .testi-avatar {
+        width: clamp(2.25rem, 2rem + 0.5vw, 3rem);
+        height: clamp(2.25rem, 2rem + 0.5vw, 3rem);
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e53e3e 0%, #c82d2d 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .testi-avatar-letter {
+        color: white;
+        font-weight: 600;
+        font-size: clamp(0.875rem, 0.75rem + 0.25vw, 1.1rem);
+        font-family: 'Inter Tight', sans-serif;
+    }
+
+    .testi-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        min-width: 0;
+    }
+
+    .testi-name {
+        font-family: 'Inter Tight', sans-serif;
+        font-weight: 500;
+        font-size: clamp(0.875rem, 0.75rem + 0.3vw, 1.05rem);
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.3;
+    }
+
+    .testi-role {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.7rem, 0.6rem + 0.2vw, 0.85rem);
+        color: rgba(255, 255, 255, 0.4);
+        line-height: 1.3;
+    }
+
+    .testi-stars {
+        margin-bottom: clamp(0.5rem, 0.3rem + 0.3vw, 0.75rem);
+        display: flex;
+        gap: 0.1rem;
+    }
+
+    .star {
+        font-size: clamp(0.75rem, 0.65rem + 0.2vw, 0.9rem);
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    .star--filled {
+        color: rgba(229, 62, 62, 0.85);
+    }
+
+    .testi-quote {
+        font-family: 'Inter Tight', sans-serif;
+        font-size: clamp(0.8rem, 0.7rem + 0.3vw, 0.95rem);
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.65;
+        font-style: italic;
+    }
+
+    @media (max-width: 1023px) {
+        .testi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 639px) {
+        .testi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    const cards = document.querySelectorAll<HTMLElement>('.testi-card');
+    if (!cards.length) throw new Error('No testimonial cards found');
+
+    // ── Staggered reveal ──
+    gsap.from('.testi-el', {
+        y: 30,
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.1,
+        ease: 'power2.out',
+        scrollTrigger: {
+            trigger: '#testimonials',
+            start: 'top 75%',
+            once: true,
+        },
+    });
+
+    // ── Per-card state ──
+    interface CardState {
+        el: HTMLElement;
+        homeX: number;
+        homeY: number;
+        offsetX: number;
+        offsetY: number;
+        velX: number;
+        velY: number;
+        isDragging: boolean;
+        dragStartX: number;
+        dragStartY: number;
+        floatPhase: number;
+        floatSpeed: number;
+        floatAmp: number;
+        parallaxSpeed: number;
+    }
+
+    const states: CardState[] = [];
+
+    cards.forEach((card, i) => {
+        const style = getComputedStyle(card);
+        states.push({
+            el: card,
+            homeX: 0,
+            homeY: 0,
+            offsetX: parseFloat(style.getPropertyValue('--offset-x')) || 0,
+            offsetY: parseFloat(style.getPropertyValue('--offset-y')) || 0,
+            velX: 0,
+            velY: 0,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            floatPhase: parseFloat(card.style.getPropertyValue('--float-phase')) || i * 1.1,
+            floatSpeed: parseFloat(card.style.getPropertyValue('--float-speed')) || 0.4 + (i % 4) * 0.15,
+            floatAmp: parseFloat(card.style.getPropertyValue('--float-amp')) || 3 + (i % 3) * 2,
+            parallaxSpeed: parseFloat(card.dataset.speed || '0.02'),
+        });
+    });
+
+    // ── Drag handlers ──
+    let activeCard: CardState | null = null;
+    let lastMouseX = 0, lastMouseY = 0;
+
+    function onPointerDown(e: PointerEvent) {
+        const target = (e.target as HTMLElement).closest('.testi-card') as HTMLElement;
+        if (!target) return;
+        const idx = parseInt(target.dataset.index || '0');
+        const state = states[idx];
+        if (!state) return;
+
+        state.isDragging = true;
+        state.velX = 0;
+        state.velY = 0;
+        activeCard = state;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        target.style.zIndex = '10';
+        target.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+
+    function onPointerMove(e: PointerEvent) {
+        if (!activeCard) return;
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        activeCard.offsetX += dx;
+        activeCard.offsetY += dy;
+        activeCard.velX = dx;
+        activeCard.velY = dy;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    }
+
+    function onPointerUp() {
+        if (!activeCard) return;
+        activeCard.isDragging = false;
+        activeCard.el.style.zIndex = '';
+        activeCard.el.style.cursor = 'grab';
+        activeCard = null;
+    }
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+
+    // ── Animation loop ──
+    let scrollY = window.scrollY;
+    window.addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
+
+    const sectionEl = document.getElementById('testimonials');
+    let sectionTop = sectionEl?.offsetTop || 0;
+    window.addEventListener('resize', () => { sectionTop = sectionEl?.offsetTop || 0; });
+
+    let testiVisible = false;
+    let frameId = 0;
+
+    function animate() {
+        if (!testiVisible && !activeCard) { frameId = 0; return; }
+        frameId = requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+        const scrollOffset = scrollY - sectionTop;
+
+        states.forEach(s => {
+            if (!s.isDragging) {
+                s.offsetX += s.velX;
+                s.offsetY += s.velY;
+                s.velX *= 0.93;
+                s.velY *= 0.93;
+                const homeOx = parseFloat(s.el.style.getPropertyValue('--offset-x')) || 0;
+                const homeOy = parseFloat(s.el.style.getPropertyValue('--offset-y')) || 0;
+                s.offsetX += (homeOx - s.offsetX) * 0.025;
+                s.offsetY += (homeOy - s.offsetY) * 0.025;
+            }
+            const floatX = Math.sin(time * s.floatSpeed + s.floatPhase) * s.floatAmp;
+            const floatY = Math.cos(time * s.floatSpeed * 0.7 + s.floatPhase) * s.floatAmp * 0.6;
+            const paraY = scrollOffset * s.parallaxSpeed;
+            s.el.style.transform = `translate(${s.offsetX + floatX}px, ${s.offsetY + floatY + paraY}px)`;
+        });
+    }
+
+    // Only animate when section is visible
+    if (sectionEl) {
+        const testiObserver = new IntersectionObserver(([entry]) => {
+            testiVisible = entry.isIntersecting;
+            if (testiVisible && !frameId) { frameId = requestAnimationFrame(animate); }
+        }, { threshold: 0 });
+        testiObserver.observe(sectionEl);
+    }
+
+    // ── Lava Lamp Metaball Canvas ──
+    const lavaCanvas = document.getElementById('lava-canvas') as HTMLCanvasElement;
+    const lavaSection = document.querySelector('.testi-section') as HTMLElement;
+    if (lavaCanvas && lavaSection) {
+        const ctx2 = lavaCanvas.getContext('2d')!;
+        const SCALE = 4; // render at 1/4 res for performance
+        let W = 0, H = 0;
+
+        interface Blob {
+            x: number; y: number; r: number;
+            vx: number; vy: number;
+        }
+
+        const blobs: Blob[] = [];
+        const NUM_BLOBS = 14;
+
+        function initBlobs() {
+            const rect = lavaSection.getBoundingClientRect();
+            W = Math.ceil(rect.width / SCALE);
+            H = Math.ceil(rect.height / SCALE);
+            lavaCanvas.width = W;
+            lavaCanvas.height = H;
+
+            blobs.length = 0;
+            for (let i = 0; i < NUM_BLOBS; i++) {
+                blobs.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    r: 8 + Math.random() * 16,
+                    vx: (Math.random() - 0.5) * 0.12,
+                    vy: (Math.random() - 0.5) * 0.08,
+                });
+            }
+        }
+        initBlobs();
+        window.addEventListener('resize', initBlobs);
+
+        // Cursor (in low-res coords)
+        let mx = -9999, my = -9999;
+        let pmx = -9999, pmy = -9999; // previous for velocity
+        let mVx = 0, mVy = 0;
+
+        lavaSection.addEventListener('mousemove', (e) => {
+            const rect = lavaSection.getBoundingClientRect();
+            pmx = mx; pmy = my;
+            mx = (e.clientX - rect.left) / SCALE;
+            my = (e.clientY - rect.top) / SCALE;
+            mVx = mx - pmx;
+            mVy = my - pmy;
+        });
+        lavaSection.addEventListener('mouseleave', () => { mx = -9999; my = -9999; mVx = 0; mVy = 0; });
+
+        let lavaVisible = false;
+        let lavaFrameId = 0;
+
+        function drawLava() {
+            if (!lavaVisible) { lavaFrameId = 0; return; }
+            lavaFrameId = requestAnimationFrame(drawLava);
+
+            // Move blobs randomly
+            blobs.forEach(b => {
+                // Gentle random drift — slow lava lamp
+                b.vx += (Math.random() - 0.5) * 0.006;
+                b.vy += (Math.random() - 0.5) * 0.004;
+                // Heavy damping — keeps movement slow
+                b.vx *= 0.992;
+                b.vy *= 0.992;
+                // Soft bounds
+                if (b.x < b.r) b.vx += 0.008;
+                if (b.x > W - b.r) b.vx -= 0.008;
+                if (b.y < b.r) b.vy += 0.008;
+                if (b.y > H - b.r) b.vy -= 0.008;
+
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Cursor splits blobs — push away if cursor cuts through
+                if (mx > -999) {
+                    const dx = b.x - mx;
+                    const dy = b.y - my;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < b.r * 1.5) {
+                        const force = (b.r * 1.5 - dist) * 0.005;
+                        const angle = Math.atan2(dy, dx);
+                        b.vx += Math.cos(angle) * force;
+                        b.vy += Math.sin(angle) * force;
+                    }
+                }
+            });
+
+            // Render metaballs
+            const imgData = ctx2.createImageData(W, H);
+            const d = imgData.data;
+
+            for (let y = 0; y < H; y++) {
+                for (let x = 0; x < W; x++) {
+                    let field = 0;
+
+                    // Sum metaball field — gently stretched along velocity
+                    for (const b of blobs) {
+                        const dx = x - b.x;
+                        const dy = y - b.y;
+                        const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+                        let distSq: number;
+
+                        if (speed > 0.03) {
+                            const stretch = Math.min(1 + speed * 1.5, 1.8);
+                            const nx = b.vx / speed;
+                            const ny = b.vy / speed;
+                            const along = dx * nx + dy * ny;
+                            const perp = dx * (-ny) + dy * nx;
+                            distSq = (along / stretch) * (along / stretch) + perp * perp;
+                        } else {
+                            distSq = dx * dx + dy * dy;
+                        }
+
+                        field += (b.r * b.r) / (distSq + 1);
+                    }
+
+                    // Cursor as negative field (cutting)
+                    if (mx > -999) {
+                        const cdx = x - mx;
+                        const cdy = y - my;
+                        const cDist2 = cdx * cdx + cdy * cdy;
+                        const cutR = 8; // cursor cut radius
+                        field -= (cutR * cutR) / (cDist2 + 1);
+                    }
+
+                    const i = (y * W + x) * 4;
+
+                    if (field > 1.0) {
+                        const intensity = Math.min(field - 1.0, 2.0) / 2.0;
+                        d[i]     = 229 * (0.3 + intensity * 0.5) | 0; // R — primary red
+                        d[i + 1] = 62 * (0.2 + intensity * 0.3) | 0;  // G
+                        d[i + 2] = 62 * (0.2 + intensity * 0.2) | 0;  // B
+                        d[i + 3] = 120 + intensity * 60 | 0;
+                    } else if (field > 0.7) {
+                        const edge = (field - 0.7) / 0.3;
+                        d[i]     = 100 * edge | 0;
+                        d[i + 1] = 20 * edge | 0;
+                        d[i + 2] = 20 * edge | 0;
+                        d[i + 3] = 50 * edge | 0;
+                    }
+                    // else transparent (0,0,0,0)
+                }
+            }
+
+            ctx2.putImageData(imgData, 0, 0);
+        }
+
+        // CSS scales canvas up from low-res → chunky lava look
+        lavaCanvas.style.imageRendering = 'auto';
+
+        const lavaObserver = new IntersectionObserver(([entry]) => {
+            lavaVisible = entry.isIntersecting;
+            if (lavaVisible && !lavaFrameId) { lavaFrameId = requestAnimationFrame(drawLava); }
+        }, { threshold: 0 });
+        lavaObserver.observe(lavaSection);
+    }
+
+    // ── ASCII Overlay ──
+    const asciiCanvas = document.getElementById('ascii-overlay-canvas') as HTMLCanvasElement;
+    const asciiSection = document.querySelector('.testi-section') as HTMLElement;
+    if (asciiCanvas && asciiSection) {
+        const aCtx = asciiCanvas.getContext('2d')!;
+        const CHARS = ' .·:;+=-~*%#@';
+        const CELL = 10;
+        let aCols = 0, aRows = 0;
+
+        function resizeAscii() {
+            const rect = asciiSection.getBoundingClientRect();
+            aCols = Math.ceil(rect.width / CELL);
+            aRows = Math.ceil(rect.height / CELL);
+            asciiCanvas.width = aCols * CELL;
+            asciiCanvas.height = aRows * CELL;
+        }
+        resizeAscii();
+        window.addEventListener('resize', resizeAscii);
+
+        let asciiVisible = false;
+        let asciiFrameId = 0;
+        let asciiLastTime = 0;
+
+        function drawAscii(time: number) {
+            if (!asciiVisible) { asciiFrameId = 0; return; }
+            asciiFrameId = requestAnimationFrame(drawAscii);
+
+            // Throttle to ~8fps for jitter effect
+            if (time - asciiLastTime < 125) return;
+            asciiLastTime = time;
+
+            aCtx.clearRect(0, 0, asciiCanvas.width, asciiCanvas.height);
+            aCtx.font = `${CELL + 1}px monospace`;
+            aCtx.textAlign = 'center';
+            aCtx.textBaseline = 'middle';
+
+            for (let r = 0; r < aRows; r++) {
+                for (let c = 0; c < aCols; c++) {
+                    // Random char with random brightness
+                    const idx = Math.floor(Math.random() * CHARS.length);
+                    const ch = CHARS[idx];
+                    if (ch === ' ') continue;
+                    const alpha = (idx / CHARS.length) * 0.6 + Math.random() * 0.2;
+                    aCtx.fillStyle = `rgba(229, 62, 62, ${alpha})`;
+                    aCtx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+                }
+            }
+        }
+
+        const asciiObserver = new IntersectionObserver(([entry]) => {
+            asciiVisible = entry.isIntersecting;
+            if (asciiVisible && !asciiFrameId) { asciiFrameId = requestAnimationFrame(drawAscii); }
+        }, { threshold: 0 });
+        asciiObserver.observe(asciiSection);
+    }
+</script>
