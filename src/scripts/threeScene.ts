@@ -39,15 +39,15 @@ const ORANGE_RINGS = [
     { name: 'big',    R: 0.27, tubeR: 0.03,  scale: 1.0,  N: 20,
       pivotTop: 0.19,  pivotBot: 0.20,  plane: 'yz' as const,
       rotY: 0, meshRot: [102.2, -14.1, 159.6] as [number,number,number],
-      meshPos: [0.673, 0.493, 0.150] as [number,number,number] },
+      meshPos: [0.614, 0.503, 0.175] as [number,number,number] },
     { name: 'medium', R: 0.18, tubeR: 0.025, scale: 0.67, N: 16,
       pivotTop: 0.20,  pivotBot: 0.12,  plane: 'xy' as const,
       rotY: 0, meshRot: [39.4, 10.1, 121.8] as [number,number,number],
-      meshPos: [1.066, 1.030, -0.323] as [number,number,number] },
+      meshPos: [1.008, 1.040, -0.297] as [number,number,number] },
     { name: 'small',  R: 0.12, tubeR: 0.02,  scale: 0.44, N: 12,
       pivotTop: 0.07,  pivotBot: 0.10,  plane: 'yz' as const,
       rotY: 0, meshRot: [-112.2, 22.5, 75.6] as [number,number,number],
-      meshPos: [1.176, 0.991, -0.465] as [number,number,number] },
+      meshPos: [1.117, 1.001, -0.440] as [number,number,number] },
 ];
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -736,7 +736,7 @@ export function initThreeScene() {
             mesh.add(innerCore);
 
             // ── Pozycja i obrót wizualny charmu Orange ──
-            mesh.position.set(1.084, 1.510, -0.612);
+            mesh.position.set(1.025, 1.520, -0.586);
             mesh.rotation.set(-15.2 * Math.PI/180, 14.9 * Math.PI/180, 67.7 * Math.PI/180);
 
             orangeCharmGroup.add(mesh);
