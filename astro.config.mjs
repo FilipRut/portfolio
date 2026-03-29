@@ -1,11 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-// import cloudflare from '@astrojs/cloudflare'; // temporarily disabled — miniflare hangs in dev
+import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  // adapter: cloudflare(),
+  adapter: vercel(),
   vite: {
     plugins: [tailwindcss()],
     build: {
