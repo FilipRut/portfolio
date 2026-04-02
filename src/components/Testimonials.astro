@@ -252,6 +252,17 @@ const testimonials = [
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 767px) {
+        .lava-canvas,
+        .ascii-overlay-canvas {
+            display: none;
+        }
+        .testi-card {
+            --offset-x: 0px;
+            --offset-y: 0px;
+        }
+    }
 </style>
 
 <script>
@@ -406,10 +417,11 @@ const testimonials = [
         testiObserver.observe(sectionEl);
     }
 
-    // ── Lava Lamp Metaball Canvas ──
+    // ── Lava Lamp Metaball Canvas (desktop only) ──
     const lavaCanvas = document.getElementById('lava-canvas') as HTMLCanvasElement;
     const lavaSection = document.querySelector('.testi-section') as HTMLElement;
-    if (lavaCanvas && lavaSection) {
+    const isDesktop = window.innerWidth > 767;
+    if (lavaCanvas && lavaSection && isDesktop) {
         const ctx2 = lavaCanvas.getContext('2d')!;
         const SCALE = 4; // render at 1/4 res for performance
         let W = 0, H = 0;
@@ -566,10 +578,10 @@ const testimonials = [
         lavaObserver.observe(lavaSection);
     }
 
-    // ── ASCII Overlay ──
+    // ── ASCII Overlay (desktop only) ──
     const asciiCanvas = document.getElementById('ascii-overlay-canvas') as HTMLCanvasElement;
     const asciiSection = document.querySelector('.testi-section') as HTMLElement;
-    if (asciiCanvas && asciiSection) {
+    if (asciiCanvas && asciiSection && isDesktop) {
         const aCtx = asciiCanvas.getContext('2d')!;
         const CHARS = ' .·:;+=-~*%#@';
         const CELL = 10;

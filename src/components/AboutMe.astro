@@ -89,20 +89,23 @@
         margin-top: clamp(0.75rem, 0.5rem + 0.4vw, 1.25rem);
     }
 
-    @media (max-width: 768px) {
-        .about-inner {
-            flex-direction: column;
-            align-items: flex-start;
-        }
+    @media (max-width: 767px) {
         .about-portrait-wrap {
-            width: 70%;
-            max-width: none;
+            display: none;
+        }
+        .about-content {
+            position: static;
+            transform: none;
+        }
+        .about-content-inner {
+            max-width: 100%;
         }
     }
 </style>
 
 <script>
-    // ── ASCII Portrait from hardcoded brightness map ──
+    // ── ASCII Portrait from hardcoded brightness map (desktop only) ──
+    if (window.innerWidth >= 768) {
     import('../scripts/portraitMap').then(({ PORTRAIT_COLS, PORTRAIT_ROWS, PORTRAIT_MAP }) => {
         const canvas = document.getElementById('ascii-portrait') as HTMLCanvasElement;
         if (!canvas) return;
@@ -172,4 +175,5 @@
         });
         observer.observe(canvas);
     });
+    } // end desktop-only guard
 </script>

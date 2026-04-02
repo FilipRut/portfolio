@@ -9,6 +9,7 @@ export interface BuddyConfig {
 }
 
 export function initBuddy(config: BuddyConfig) {
+    if (window.innerWidth < 768) return null;
     const { promptInput, prompterFixed, generateBtn, glassWrap, getChatMode } = config;
 
     const buddyCanvas = document.getElementById('pixel-buddy') as HTMLCanvasElement;

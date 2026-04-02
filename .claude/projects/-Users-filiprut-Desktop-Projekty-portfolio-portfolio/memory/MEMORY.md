@@ -1,0 +1,1 @@
+- [3D keychain scene working state](3d_scene_working_state.md) — Working scene-opt.glb approach, never reparent meshes

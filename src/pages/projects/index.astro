@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteLogo from '../../components/SiteLogo.astro';
 import { getCollection } from 'astro:content';
 
 const projects = (await getCollection('projects'))
@@ -8,16 +9,22 @@ const projects = (await getCollection('projects'))
 ---
 
 <BaseLayout>
-  <section class="projects-page">
-    <header class="projects-header">
-      <a href="/" class="back-link">&larr; Back</a>
-      <h1>Projects</h1>
-      <p class="projects-subtitle">Selected work from the past years</p>
-    </header>
+  <SiteLogo alwaysVisible />
 
-    <div class="projects-grid">
+  <section class="projects-page">
+    <!-- Dark hero -->
+    <div class="hero-wrap">
+      <header class="projects-hero" data-section-dark>
+        <a href="/" class="back-link reveal-hero">&larr; Home</a>
+        <h1 class="reveal-hero">Projects</h1>
+        <p class="projects-subtitle reveal-hero">Selected work from the past years</p>
+      </header>
+    </div>
+
+    <!-- Project cards grid -->
+    <div class="projects-grid" data-reveal-stagger>
       {projects.map(project => (
-        <a href={`/projects/${project.id}`} class="project-card">
+        <a href={`/projects/${project.id}`} class="project-card" data-cover={project.data.cover}>
           <div class="project-cover">
             <img
               src={project.data.cover}
@@ -43,72 +50,95 @@ const projects = (await getCollection('projects'))
         </a>
       ))}
     </div>
+
+    <!-- Floating thumbnail -->
+    <div id="tile-preview" class="tile-preview">
+      <img id="tile-preview-img" class="tile-preview-img" src="" alt="Project preview" />
+    </div>
   </section>
 </BaseLayout>
 
 <style>
   .projects-page {
     min-height: 100vh;
-    background: #fafafa;
-    padding: clamp(1.5rem, 1rem + 2vw, 4rem);
+    background: #fff;
   }
 
-  .projects-header {
-    max-width: 1200px;
-    margin: 0 auto clamp(2rem, 1.5rem + 2vw, 4rem);
+  /* ── Dark Hero ── */
+  .hero-wrap {
+    padding: 0 clamp(1.5rem, 1rem + 3vw, 4rem);
   }
 
-  .back-link {
+  .projects-hero {
+    background: #111;
+    border-radius: 0 0 clamp(1rem, 0.75rem + 0.5vw, 1.5rem) clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    padding: clamp(5rem, 4rem + 4vw, 9rem) clamp(1.5rem, 1rem + 2vw, 3rem) clamp(3rem, 2rem + 3vw, 5rem);
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .projects-hero .back-link {
     display: inline-block;
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.8rem, 0.7rem + 0.2vw, 0.9rem);
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     text-decoration: none;
-    margin-bottom: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
     transition: color 0.2s;
   }
+  .projects-hero .back-link:hover { color: rgba(255, 255, 255, 0.8); }
 
-  .back-link:hover { color: rgba(0, 0, 0, 0.85); }
-
-  .projects-header h1 {
+  .projects-hero h1 {
     font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(2rem, 1.5rem + 2.5vw, 4rem);
+    font-size: clamp(2.5rem, 2rem + 3vw, 5rem);
     font-weight: 500;
-    color: #171717;
-    line-height: 1.1;
+    color: #fff;
+    line-height: 0.95;
     margin: 0;
   }
 
   .projects-subtitle {
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.9rem, 0.8rem + 0.3vw, 1.1rem);
-    color: rgba(0, 0, 0, 0.5);
-    margin-top: 0.5rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 0.75rem;
   }
 
+  /* ── Grid ── */
   .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
     gap: clamp(1.5rem, 1rem + 1.5vw, 2.5rem);
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
+    padding: clamp(2.5rem, 2rem + 2vw, 4rem) clamp(1.5rem, 1rem + 3vw, 4rem);
   }
 
+  /* ── Glass Cards ── */
   .project-card {
     display: flex;
     flex-direction: column;
-    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1rem);
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
     overflow: hidden;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.06);
     text-decoration: none;
     color: inherit;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease, box-shadow 0.3s ease;
+
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px) saturate(130%);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      inset 0 -0.5px 0 rgba(0, 0, 0, 0.02);
   }
 
   .project-card:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    background: #111;
+    border-color: #111;
     transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   }
 
   .project-cover {
@@ -142,7 +172,9 @@ const projects = (await getCollection('projects'))
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.7rem, 0.65rem + 0.15vw, 0.8rem);
     color: rgba(0, 0, 0, 0.45);
+    transition: color 0.3s ease;
   }
+  .project-card:hover .project-meta { color: rgba(255, 255, 255, 0.4); }
 
   .project-client { font-weight: 500; }
 
@@ -153,7 +185,9 @@ const projects = (await getCollection('projects'))
     color: #171717;
     line-height: 1.3;
     margin: 0;
+    transition: color 0.3s ease;
   }
+  .project-card:hover .project-title { color: #fff; }
 
   .project-desc {
     font-family: 'Inter Tight', sans-serif;
@@ -165,7 +199,9 @@ const projects = (await getCollection('projects'))
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    transition: color 0.3s ease;
   }
+  .project-card:hover .project-desc { color: rgba(255, 255, 255, 0.55); }
 
   .project-tags {
     display: flex;
@@ -181,5 +217,75 @@ const projects = (await getCollection('projects'))
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.04);
     color: rgba(0, 0, 0, 0.5);
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+  .project-card:hover .project-tag {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* ── Floating preview ── */
+  .tile-preview {
+    position: fixed;
+    z-index: 30;
+    pointer-events: none;
+    width: clamp(12rem, 10rem + 6vw, 20rem);
+    aspect-ratio: 16 / 10;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+    transition: opacity 0.25s ease, transform 0.3s ease;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  }
+  .tile-preview.is-visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  .tile-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 1024px) {
+    .tile-preview { display: none; }
+  }
+
+  @media (max-width: 767px) {
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
+
+<script>
+  // Floating preview on card hover
+  const preview = document.getElementById('tile-preview') as HTMLDivElement;
+  const previewImg = document.getElementById('tile-preview-img') as HTMLImageElement;
+  const cards = document.querySelectorAll<HTMLAnchorElement>('.project-card');
+  let currentCover = '';
+
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      const img = card.dataset.cover;
+      if (!img) return;
+      if (img !== currentCover) {
+        currentCover = img;
+        previewImg.src = img;
+      }
+      preview.classList.add('is-visible');
+    });
+    card.addEventListener('mouseleave', () => {
+      preview.classList.remove('is-visible');
+    });
+    card.addEventListener('mousemove', (e) => {
+      preview.style.left = (e.clientX + 20) + 'px';
+      preview.style.top = (e.clientY - 60) + 'px';
+    });
+  });
+</script>
+
+<script>
+  import '../../scripts/subpage';
+</script>

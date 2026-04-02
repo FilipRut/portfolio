@@ -153,14 +153,20 @@ export function initThreeScene() {
     const placeholder = document.getElementById('keychain-container');
     if (!globalContainer || !placeholder) return;
 
+    const isMobile = window.innerWidth < 768;
+    const SCENE_FOV = isMobile ? 55 : 40;
+    const CENTERED_SCALE = isMobile ? 0.95 : 1.47;
+    const CENTERED_Y = isMobile ? 1.2 : 1.8;
+    const PINNED_SCALE = isMobile ? 0.24 : 0.34;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(SCENE_FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     // ── Renderer: photorealistic PBR ──
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 0.85;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = false;
     globalContainer.appendChild(renderer.domElement);
@@ -175,23 +181,28 @@ export function initThreeScene() {
     // to shape highlights. RectAreaLights and SpotLights removed — environment
     // map already provides soft studio reflections at zero per-frame cost.
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
     // BACKLIGHT — refracts through resin for inner glow
-    const backLight = new THREE.DirectionalLight(0xffffff, 6.0);
+    const backLight = new THREE.DirectionalLight(0xffffff, 3.5);
     backLight.position.set(-2, 5, -8);
     backLight.castShadow = false;
     scene.add(backLight);
 
-    // KEY LIGHT — DirectionalLight instead of RectAreaLight (cheaper, env map handles softness)
-    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+    // KEY LIGHT — primary shaping light
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 1.8);
     keyLight.position.set(5, 4, 3);
     scene.add(keyLight);
 
-    // FILL — DirectionalLight instead of RectAreaLight
-    const fillLight = new THREE.DirectionalLight(0xddeeff, 1.5);
+    // FILL — cool side fill for depth
+    const fillLight = new THREE.DirectionalLight(0xddeeff, 0.8);
     fillLight.position.set(-4, 2, 2);
     scene.add(fillLight);
+
+    // PRIMARY ACCENT — red point light for brand color warmth
+    const accentLight = new THREE.PointLight(0xe53e3e, 2.5, 15, 1.5);
+    accentLight.position.set(2, -2, 4);
+    scene.add(accentLight);
 
     const mainGroup = new THREE.Group();
     scene.add(mainGroup);
@@ -935,7 +946,9 @@ export function initThreeScene() {
     const keychainAnchor = document.getElementById('ft-section') || document.getElementById('keychain-anchor');
 
     let mouseX = 0, mouseY = 0;
-    window.addEventListener('mousemove', (e) => { mouseX = (e.clientX / window.innerWidth) - 0.5; mouseY = (e.clientY / window.innerHeight) - 0.5; });
+    if (!isMobile) {
+        window.addEventListener('mousemove', (e) => { mouseX = (e.clientX / window.innerWidth) - 0.5; mouseY = (e.clientY / window.innerHeight) - 0.5; });
+    }
 
     let isDragging = false, dragRotY = 0, dragVelocity = 0, lastDragX = 0, isHovering = false, touchActive = false, touchStartX = 0;
 
@@ -1154,22 +1167,22 @@ export function initThreeScene() {
             if (anchorRect.width > 0 && anchorRect.height > 0) {
                 // Target: top of ft-section (not center), clamped to stay in viewport
                 const anchorWorld = screenToWorld(anchorRect.left + anchorRect.width / 2, Math.min(anchorRect.top, window.innerHeight * 0.65));
-                const anchorOffset = 0.6 * 1.47;
+                const anchorOffset = 0.6 * CENTERED_SCALE;
                 mainGroup.visible = true;
-                tgtScale = 1.47;
+                tgtScale = CENTERED_SCALE;
                 tgtX = gsap.utils.interpolate(0, anchorWorld.x, s);
-                tgtYPos = gsap.utils.interpolate(1.8, anchorWorld.y + anchorOffset, s);
+                tgtYPos = gsap.utils.interpolate(CENTERED_Y, anchorWorld.y + anchorOffset, s);
             } else {
                 mainGroup.visible = true;
-                tgtScale = 1.47;
+                tgtScale = CENTERED_SCALE;
                 tgtX = 0;
-                tgtYPos = 1.8;
+                tgtYPos = CENTERED_Y;
             }
         } else if (t >= 1) {
             mainGroup.visible = true;
-            tgtScale = 1.47;
+            tgtScale = CENTERED_SCALE;
             tgtX = 0;
-            tgtYPos = 1.8;
+            tgtYPos = CENTERED_Y;
         } else {
             const rect = placeholder!.getBoundingClientRect();
             if (rect.width === 0 && rect.height === 0) {
@@ -1179,11 +1192,10 @@ export function initThreeScene() {
             }
             mainGroup.visible = true;
             const sp = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            const pinnedScale = 0.34;
-            const pinnedOffset = 0.6 * pinnedScale;
-            tgtScale = gsap.utils.interpolate(pinnedScale, 1.47, t);
+            const pinnedOffset = 0.6 * PINNED_SCALE;
+            tgtScale = gsap.utils.interpolate(PINNED_SCALE, CENTERED_SCALE, t);
             tgtX = gsap.utils.interpolate(sp.x, 0, t);
-            tgtYPos = gsap.utils.interpolate(sp.y + pinnedOffset, 1.8, t);
+            tgtYPos = gsap.utils.interpolate(sp.y + pinnedOffset, CENTERED_Y, t);
         }
 
         if (firstFrame) {

@@ -204,9 +204,7 @@
             flex-direction: column;
         }
         .process-placeholder {
-            width: 100%;
-            position: static;
-            aspect-ratio: 16 / 9;
+            display: none;
         }
         .step-content {
             flex-direction: column;
@@ -224,22 +222,9 @@
     const STEP_SVGS: (string | null)[] = [
         null, // 01 uses real image (earMap)
         null, // 02 uses real image (brainMap)
-        // 03 — Lightning bolt (speed)
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
-            <path d="M120 10 L60 140 L95 140 L75 270 L155 120 L115 120 L145 10Z" fill="black"/>
-        </svg>`,
-        // 04 — Checkmark/magnifier (validate)
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
-            <circle cx="95" cy="110" r="60" fill="none" stroke="black" stroke-width="14"/>
-            <line x1="140" y1="155" x2="180" y2="200" stroke="black" stroke-width="16" stroke-linecap="round"/>
-            <path d="M70 108 L88 126 L122 88" fill="none" stroke="black" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`,
-        // 05 — Rocket (ship)
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" width="200" height="280">
-            <path d="M100 20 C100 20 130 60 130 140 L145 175 L130 175 L130 200 L100 220 L70 200 L70 175 L55 175 L70 140 C70 60 100 20 100 20Z" fill="black"/>
-            <circle cx="100" cy="110" r="14" fill="white"/>
-            <path d="M85 220 L80 260 L100 245 L120 260 L115 220" fill="black"/>
-        </svg>`,
+        null, // 03 — hyperspace effect (procedural)
+        null, // 04 — energy sphere (procedural)
+        null, // 05 — ice tower platformer (procedural)
     ];
 
     const CHARS = ' .·:;+=-~*%#@MW';
@@ -255,6 +240,77 @@
     let COLS = 0, ROWS = 0;
     let frameId = 0;
     let lastTime = 0;
+
+    // Hyperspace state
+    let isHyperspace = false;
+    const STAR_COUNT = 260;
+    let hyperspaceStars: { x: number; y: number; z: number; pz: number }[] = [];
+
+    // Energy Sphere state
+    interface EnergyAtom {
+        state: 'flying' | 'orbiting';
+        x: number; y: number; z: number;
+        vx: number; vy: number; vz: number;
+        speed: number;
+        orbitR: number; orbitAngle: number; orbitSpeed: number;
+        orbitIncl: number; orbitAsc: number; orbitDecay: number;
+        brightness: number; delay: number;
+        seed: number; size: number;
+        trail: [number, number, number][];
+    }
+    let isEnergySphere = false;
+    let sphereTime = 0;
+    let energyAtoms: EnergyAtom[] = [];
+    const SPHERE_R = 16;
+    const SPHERE_CX = 35;
+    const SPHERE_CY = 49;
+    const ATOM_COUNT = 40;
+    const ATOM_R = 1.87;
+
+    // Brain neuron state
+    interface Neuron {
+        r: number; c: number;
+        pr: number; pc: number;
+        dir: number;
+        speed: number;
+        life: number; maxLife: number;
+    }
+    let isBrainActive = false;
+    let neurons: Neuron[] = [];
+    let neuronGlow: Float32Array = new Float32Array(0);
+    const NEURON_COUNT = 10;
+    const DIR_DR = [-1, -1, 0, 1, 1, 1, 0, -1];
+    const DIR_DC = [0, 1, 1, 1, 0, -1, -1, -1];
+
+    // Ear zoom (Droste) state
+    let isEarZoom = false;
+    let earZoomTime = 0;
+    const EAR_FOCAL_R = 36;
+    const EAR_FOCAL_C = 45;
+
+    // Ice Tower state
+    let isIceTower = false;
+    let towerCameraY = 0;
+    let towerBuddy = { x: 30, y: 0, vx: 1.0, vy: 0 };
+    let towerPlatforms: { x: number; w: number; y: number }[] = [];
+    const T_GRAV = 0.28;
+    const T_JUMP = -3.8;
+    const BW = 7, BH = 5;
+
+    const BUDDY_JUMP: string[][] = [
+        [' ','@','@','@','@','@',' '],
+        ['@','@','@','#','@','@','@'],
+        [' ','@','@','@','@','@',' '],
+        [' ','@','@','@','@','@',' '],
+        [' ','@',' ',' ',' ','@',' '],
+    ];
+    const BUDDY_FALL: string[][] = [
+        ['@','@','@','@','@','@','@'],
+        [' ','@','@','#','@','@',' '],
+        [' ','@','@','@','@','@',' '],
+        [' ',' ','@','@','@',' ',' '],
+        ['@',' ',' ',' ',' ',' ','@'],
+    ];
 
     // Set placeholder height to match first 4 rows
     function syncHeight() {
@@ -324,10 +380,23 @@
 
     function loadStep(index: number) {
         if (!ctx) return;
+        isHyperspace = false;
+        isEnergySphere = false;
+        isBrainActive = false;
+        isEarZoom = false;
+        isIceTower = false;
         if (index === 0 && earData) {
             loadFromMap(earData.MAP, earData.COLS, earData.ROWS);
+            initEarZoom();
         } else if (index === 1 && brainData) {
             loadFromMap(brainData.MAP, brainData.COLS, brainData.ROWS);
+            initBrainNeurons();
+        } else if (index === 2) {
+            initHyperspace();
+        } else if (index === 3) {
+            initEnergySphere();
+        } else if (index === 4) {
+            initIceTower();
         } else {
             const svgStr = STEP_SVGS[index];
             if (svgStr) loadFromSvg(svgStr);
@@ -362,16 +431,690 @@
         }
     }
 
+    // ── Ear Zoom (Droste) ──
+
+    function sampleEar(r: number, c: number): number {
+        if (!earData) return 1;
+        const rows = earData.ROWS, cols = earData.COLS, map = earData.MAP;
+        if (r < 0 || r >= rows - 1 || c < 0 || c >= cols - 1) return 1;
+        const r0 = Math.floor(r), c0 = Math.floor(c);
+        const fr = r - r0, fc = c - c0;
+        const v = (1 - fr) * (1 - fc) * map[r0][c0]
+                + fr * (1 - fc) * map[r0 + 1][c0]
+                + (1 - fr) * fc * map[r0][c0 + 1]
+                + fr * fc * map[r0 + 1][c0 + 1];
+        const n = v / 9;
+        return Math.max(0, Math.min(1, (n - 0.5) * 1.38 + 0.5));
+    }
+
+    function initEarZoom() {
+        isEarZoom = true;
+        earZoomTime = 0;
+        cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(loop);
+    }
+
+    function drawEarZoom() {
+        if (!ctx || !earData) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        earZoomTime += 0.012;
+        const phase = earZoomTime % 1.0;
+        const zoomOuter = Math.pow(2, phase);
+        const zoomInner = zoomOuter / 2;
+
+        // Dual opacity crossfade — no seam at wrap
+        const tIn = Math.max(0, Math.min(1, (phase - 0.15) / 0.45));
+        const innerOpacity = tIn * tIn * (3 - 2 * tIn);
+        const tOut = Math.max(0, Math.min(1, (phase - 0.6) / 0.35));
+        const outerOpacity = 1 - tOut * tOut * (3 - 2 * tOut);
+
+        const fr = EAR_FOCAL_R, fc = EAR_FOCAL_C;
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const outerR = fr + (r - fr) / zoomOuter;
+                const outerC = fc + (c - fc) / zoomOuter;
+                const outerB = sampleEar(outerR, outerC);
+
+                const innerR = fr + (r - fr) / zoomInner;
+                const innerC = fc + (c - fc) / zoomInner;
+                const innerB = sampleEar(innerR, innerC);
+
+                // Each layer fades via its own opacity; min picks darker
+                const effOuter = 1 - (1 - outerB) * outerOpacity;
+                const effInner = 1 - (1 - innerB) * innerOpacity;
+                const brightness = Math.min(effOuter, effInner);
+
+                if (brightness > 0.92) continue;
+                const ch = charFor(brightness);
+                if (ch === ' ') continue;
+                const darkness = 1 - brightness;
+                const alpha = darkness * (0.5 + Math.random() * 0.5);
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+            }
+        }
+    }
+
+    // ── Brain Neurons ──
+
+    function spawnNeuron(): Neuron {
+        if (!brainData) return { r: 0, c: 0, pr: 0, pc: 0, dir: 0, speed: 2, life: 0, maxLife: 40 };
+        const map = brainData.MAP;
+        let r = 0, c = 0;
+        for (let tries = 0; tries < 200; tries++) {
+            r = Math.floor(Math.random() * brainData.ROWS);
+            c = Math.floor(Math.random() * brainData.COLS);
+            if (map[r][c] <= 2) break;
+        }
+        const maxLife = 25 + Math.floor(Math.random() * 35);
+        return {
+            r, c, pr: r, pc: c,
+            dir: Math.floor(Math.random() * 8),
+            speed: 1.5 + Math.random() * 1.5,
+            life: maxLife, maxLife
+        };
+    }
+
+    function initBrainNeurons() {
+        isBrainActive = true;
+        neuronGlow = new Float32Array(COLS * ROWS);
+        neurons = [];
+        for (let i = 0; i < NEURON_COUNT; i++) {
+            const n = spawnNeuron();
+            n.life = Math.floor(Math.random() * n.maxLife);
+            neurons.push(n);
+        }
+        cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(loop);
+    }
+
+    function drawBrain() {
+        if (!ctx || !brightnessMap.length || !brainData) return;
+        const map = brainData.MAP;
+
+        // Fast decay — sharp flashes, not lingering trails
+        for (let i = 0; i < neuronGlow.length; i++) neuronGlow[i] *= 0.72;
+
+        // Update neurons
+        for (let ni = 0; ni < neurons.length; ni++) {
+            const n = neurons[ni];
+            n.life--;
+            if (n.life <= 0) { neurons[ni] = spawnNeuron(); continue; }
+
+            // Multiple steps per frame for high speed
+            const steps = Math.ceil(n.speed);
+            for (let step = 0; step < steps; step++) {
+                const cr = Math.round(n.r), cc = Math.round(n.c);
+
+                // Write glow — tiny bright point + thin halo
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        const gr = cr + dr, gc = cc + dc;
+                        if (gr < 0 || gr >= ROWS || gc < 0 || gc >= COLS) continue;
+                        const dist = Math.abs(dr) + Math.abs(dc);
+                        const intensity = dist === 0 ? 0.85 : 0.18;
+                        const idx = gr * COLS + gc;
+                        neuronGlow[idx] = Math.min(1, neuronGlow[idx] + intensity);
+                    }
+                }
+
+                // Pick next direction: score 8 neighbors
+                let bestScore = -Infinity;
+                let bestDir = n.dir;
+                for (let d = 0; d < 8; d++) {
+                    const nr = cr + DIR_DR[d], nc = cc + DIR_DC[d];
+                    if (nr < 0 || nr >= brainData.ROWS || nc < 0 || nc >= brainData.COLS) continue;
+                    const val = map[nr][nc];
+                    if (val >= 6) continue; // stay on brain tissue
+                    let score = val <= 2 ? 12 : val <= 3 ? 6 : 1; // heavily prefer darkest folds
+
+                    // Strong momentum — particles shoot straight
+                    const angleDiff = Math.min(Math.abs(d - n.dir), 8 - Math.abs(d - n.dir));
+                    score += (4 - angleDiff) * 3;
+
+                    const reverse = (n.dir + 4) % 8;
+                    if (d === reverse) score -= 12;
+
+                    // Repel from other neurons
+                    for (let oi = 0; oi < neurons.length; oi++) {
+                        if (oi === ni) continue;
+                        const o = neurons[oi];
+                        const odr = nr - o.r, odc = nc - o.c;
+                        const od = odr * odr + odc * odc;
+                        if (od < 36) score -= (36 - od) * 0.5; // repel within 6 cells
+                    }
+
+                    score += Math.random() * 1.5;
+                    if (score > bestScore) { bestScore = score; bestDir = d; }
+                }
+
+                n.pr = n.r; n.pc = n.c;
+                n.dir = bestDir;
+                n.r += DIR_DR[bestDir];
+                n.c += DIR_DC[bestDir];
+
+                n.r = Math.max(0, Math.min(brainData.ROWS - 1, n.r));
+                n.c = Math.max(0, Math.min(brainData.COLS - 1, n.c));
+
+                if (map[Math.round(n.r)][Math.round(n.c)] >= 6) {
+                    neurons[ni] = spawnNeuron();
+                    break;
+                }
+            }
+        }
+
+        // Render brain with glow overlay
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const brightness = brightnessMap[r * COLS + c];
+                if (brightness > 0.92) continue;
+
+                const glow = neuronGlow[r * COLS + c];
+                let darkness = 1 - brightness;
+
+                // Glow LIGHTENS the brain — neurons are white light
+                // Reduce darkness where glow is active (illumination)
+                if (glow > 0.01) darkness = Math.max(0, darkness * (1 - glow * 0.85));
+
+                const idx = Math.floor(darkness * (CHARS.length - 1));
+                const jitter = Math.floor(Math.random() * 3) - 1;
+                const ch = CHARS[Math.max(0, Math.min(CHARS.length - 1, idx + jitter))];
+                if (ch === ' ') continue;
+
+                let alpha = darkness * (0.5 + Math.random() * 0.5);
+                if (glow > 0.01) alpha = Math.max(0.02, alpha * (1 - glow * 0.8));
+
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+            }
+        }
+    }
+
+    function initHyperspace() {
+        isHyperspace = true;
+        COLS = 70;
+        ROWS = 98;
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+        brightnessMap = [];
+        hyperspaceStars = [];
+        for (let i = 0; i < STAR_COUNT; i++) {
+            hyperspaceStars.push({
+                x: (Math.random() - 0.5) * 1.6,
+                y: (Math.random() - 0.5) * 1.6,
+                z: Math.random(),
+                pz: Math.random()
+            });
+        }
+        // Ensure animation loop is running
+        cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(loop);
+    }
+
+    function drawHyperspace() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const cx = cw / 2;
+        const cy = ch / 2;
+        const fov = cx * 0.8;
+        const speed = 0.045;
+
+        for (const star of hyperspaceStars) {
+            star.pz = star.z;
+            star.z -= speed;
+
+            if (star.z <= 0.005) {
+                star.x = (Math.random() - 0.5) * 1.6;
+                star.y = (Math.random() - 0.5) * 1.6;
+                star.z = 1;
+                star.pz = 1;
+                continue;
+            }
+
+            const sx = (star.x / star.z) * fov + cx;
+            const sy = (star.y / star.z) * fov + cy;
+            const px = (star.x / star.pz) * fov + cx;
+            const py = (star.y / star.pz) * fov + cy;
+
+            if (sx < -CELL || sx >= cw + CELL || sy < -CELL || sy >= ch + CELL) {
+                star.x = (Math.random() - 0.5) * 1.6;
+                star.y = (Math.random() - 0.5) * 1.6;
+                star.z = 1;
+                star.pz = 1;
+                continue;
+            }
+
+            const closeness = 1 - star.z;
+            const dx = sx - px;
+            const dy = sy - py;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.max(1, Math.ceil(len / (CELL * 0.7)));
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = px + dx * t;
+                const y = py + dy * t;
+                const streakBright = 0.3 + t * 0.7;
+                const ci = Math.floor(streakBright * closeness * (CHARS.length - 1));
+                const c = CHARS[Math.max(0, Math.min(CHARS.length - 1, ci))];
+                if (c === ' ') continue;
+                const alpha = streakBright * closeness * (0.7 + Math.random() * 0.3);
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(c, x, y);
+            }
+        }
+    }
+
+    // ── Energy Sphere ──
+
+    function createFlyingAtom(delay: number): EnergyAtom {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 38 + Math.random() * 12;
+        const x = SPHERE_CX + Math.cos(angle) * dist;
+        const y = SPHERE_CY + Math.sin(angle) * dist / 0.7;
+        const z = (Math.random() - 0.5) * 20;
+        const dx = SPHERE_CX - x, dy = SPHERE_CY - y, dz = -z;
+        const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return {
+            state: 'flying', x, y, z,
+            vx: dx / len + (Math.random() - 0.5) * 0.1,
+            vy: dy / len + (Math.random() - 0.5) * 0.1,
+            vz: dz / len + (Math.random() - 0.5) * 0.1,
+            speed: 0.4 + Math.random() * 0.5,
+            orbitR: 0, orbitAngle: 0, orbitSpeed: 0,
+            orbitIncl: 0, orbitAsc: 0, orbitDecay: 0,
+            brightness: 0.4, delay, seed: Math.random() * 100, size: 0.5 + Math.random() * 0.7, trail: []
+        };
+    }
+
+    function createOrbitingAtom(): EnergyAtom {
+        const orbitR = SPHERE_R + 2 + Math.random() * 14;
+        const orbitAngle = Math.random() * Math.PI * 2;
+        const orbitIncl = Math.random() * Math.PI;
+        const orbitAsc = Math.random() * Math.PI * 2;
+        const localX = orbitR * Math.cos(orbitAngle);
+        const localY = orbitR * Math.sin(orbitAngle);
+        const y1 = localY * Math.cos(orbitIncl);
+        const z1 = localY * Math.sin(orbitIncl);
+        const x2 = localX * Math.cos(orbitAsc) - z1 * Math.sin(orbitAsc);
+        const z2 = localX * Math.sin(orbitAsc) + z1 * Math.cos(orbitAsc);
+        return {
+            state: 'orbiting',
+            x: SPHERE_CX + x2, y: SPHERE_CY + y1 / 0.7, z: z2,
+            vx: 0, vy: 0, vz: 0, speed: 0,
+            orbitR, orbitAngle,
+            orbitSpeed: 0.04 + Math.random() * 0.08,
+            orbitIncl, orbitAsc,
+            orbitDecay: 0.01 + Math.random() * 0.02,
+            brightness: 0.35 + Math.random() * 0.2,
+            delay: 0, seed: Math.random() * 100, size: 0.5 + Math.random() * 0.7, trail: []
+        };
+    }
+
+    function initEnergySphere() {
+        isEnergySphere = true;
+        COLS = 70; ROWS = 98;
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+        brightnessMap = [];
+        sphereTime = 0;
+        energyAtoms = [];
+        for (let i = 0; i < ATOM_COUNT; i++) {
+            if (i < 15) energyAtoms.push(createOrbitingAtom());
+            else energyAtoms.push(createFlyingAtom(Math.floor(Math.random() * 60)));
+        }
+        cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(loop);
+    }
+
+    function drawEnergySphere() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        sphereTime++;
+        const breathe = 1 + 0.05 * Math.sin(sphereTime * 0.06);
+        const mod4 = Math.sin(sphereTime * 0.03);
+
+        function deformedR(a: number): number {
+            return (SPHERE_R
+                + 1.2 * Math.sin(a * 3 + sphereTime * 0.08)
+                + 0.9 * Math.sin(a * 5 - sphereTime * 0.12)
+                + 0.6 * Math.sin(a * 7 + sphereTime * 0.05)
+                + 1.1 * Math.sin(a * 2 + sphereTime * 0.15) * mod4
+            ) * breathe;
+        }
+
+        // Update atoms
+        for (const atom of energyAtoms) {
+            if (atom.delay > 0) { atom.delay--; continue; }
+
+            if (atom.state === 'flying') {
+                atom.trail.push([atom.x, atom.y, atom.z]);
+                if (atom.trail.length > 3) atom.trail.shift();
+                atom.x += atom.vx * atom.speed;
+                atom.y += atom.vy * atom.speed;
+                atom.z += atom.vz * atom.speed;
+
+                const ddx = atom.x - SPHERE_CX;
+                const ddy = (atom.y - SPHERE_CY) * 0.7;
+                const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                const ang = Math.atan2(ddy, ddx);
+                if (dist < deformedR(ang) + 2) {
+                    atom.state = 'orbiting';
+                    atom.orbitR = dist;
+                    atom.orbitAngle = ang;
+                    atom.orbitSpeed = 0.04 + Math.random() * 0.08;
+                    atom.orbitIncl = Math.random() * Math.PI;
+                    atom.orbitAsc = Math.random() * Math.PI * 2;
+                    atom.orbitDecay = 0.01 + Math.random() * 0.02;
+                    atom.brightness = 0.7;
+                    atom.trail = [];
+                }
+            } else {
+                atom.orbitAngle += atom.orbitSpeed;
+                atom.orbitAsc += atom.orbitSpeed * 0.23;   // orbital plane precession
+                atom.orbitIncl += atom.orbitSpeed * 0.11;  // inclination wobble
+                atom.orbitR -= atom.orbitDecay;
+                if (atom.brightness > 0.45) atom.brightness -= 0.03;
+
+                atom.trail.push([atom.x, atom.y, atom.z]);
+                if (atom.trail.length > 3) atom.trail.shift();
+
+                const lx = atom.orbitR * Math.cos(atom.orbitAngle);
+                const ly = atom.orbitR * Math.sin(atom.orbitAngle);
+                const y1 = ly * Math.cos(atom.orbitIncl);
+                const z1 = ly * Math.sin(atom.orbitIncl);
+                atom.x = SPHERE_CX + lx * Math.cos(atom.orbitAsc) - z1 * Math.sin(atom.orbitAsc);
+                atom.y = SPHERE_CY + y1 / 0.7;
+                atom.z = lx * Math.sin(atom.orbitAsc) + z1 * Math.cos(atom.orbitAsc);
+
+                if (atom.orbitR < SPHERE_R + 1) {
+                    Object.assign(atom, createFlyingAtom(Math.floor(Math.random() * 30)));
+                }
+            }
+        }
+
+        // Separate behind / front atoms
+        const behind: EnergyAtom[] = [];
+        const front: EnergyAtom[] = [];
+        for (const atom of energyAtoms) {
+            if (atom.delay > 0) continue;
+            if (atom.state === 'orbiting' && atom.z < 0) behind.push(atom);
+            else front.push(atom);
+        }
+
+        // Layer 1: behind atoms (dimmed)
+        for (const atom of behind) drawAtomChar(atom, 0.3);
+
+        // Layer 2: sphere surface (SDF per cell)
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const ddx = c - SPHERE_CX;
+                const ddy = (r - SPHERE_CY) * 0.7;
+                const dist2D = Math.sqrt(ddx * ddx + ddy * ddy);
+                const ang = Math.atan2(ddy, ddx);
+                const dR = deformedR(ang);
+                if (dist2D >= dR) continue;
+
+                const nd = dist2D / dR;
+                const depth = Math.sqrt(1 - nd * nd);
+
+                // Directional light (upper-left)
+                const light = Math.max(0, (ddx / dR) * -0.5 + (ddy / dR) * -0.7 + depth * 0.5);
+                const rim = 1 - depth;
+                const pulse = 0.5 + 0.5 * Math.sin(sphereTime * 0.1 + dist2D * 0.3);
+
+                let bright = (0.15 + 0.85 * light) * (1 - rim * 0.4);
+                bright = bright * 0.7 + pulse * 0.3;
+
+                const ci = Math.floor((1 - bright) * (CHARS.length - 1));
+                const jitter = Math.floor(Math.random() * 3) - 1;
+                const ch = CHARS[Math.max(0, Math.min(CHARS.length - 1, ci + jitter))];
+                if (ch === ' ') continue;
+
+                const alpha = (1 - bright) * (0.5 + Math.random() * 0.5);
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(ch, c * CELL + CELL / 2, r * CELL + CELL / 2);
+            }
+        }
+
+        // Layer 3: front atoms
+        for (const atom of front) drawAtomChar(atom, 1.0);
+    }
+
+    function drawAtomChar(atom: EnergyAtom, dim: number) {
+        if (!ctx) return;
+        const ar = ATOM_R * atom.size;
+        const ceil = Math.ceil(ar);
+
+        // Trail — shrinking blobs
+        for (let i = 0; i < atom.trail.length; i++) {
+            const [tx, ty] = atom.trail[i];
+            const tt = (i + 1) / (atom.trail.length + 1);
+            const tr = ar * tt * 0.5;
+            const tc = Math.ceil(tr);
+            for (let dr = -tc; dr <= tc; dr++) {
+                for (let dc = -tc; dc <= tc; dc++) {
+                    const gr = Math.round(ty) + dr, gc = Math.round(tx) + dc;
+                    if (gr < 0 || gr >= ROWS || gc < 0 || gc >= COLS) continue;
+                    const d = Math.sqrt(dc * dc + (dr * 0.7) * (dr * 0.7));
+                    if (d >= tr) continue;
+                    const nd = d / tr;
+                    const depth = Math.sqrt(1 - nd * nd);
+                    const ta = tt * atom.brightness * depth * 0.2 * dim;
+                    if (ta < 0.02) continue;
+                    const tci = Math.floor(ta * (CHARS.length - 1));
+                    const tch = CHARS[Math.max(0, Math.min(CHARS.length - 1, tci))];
+                    if (tch === ' ') continue;
+                    ctx.fillStyle = `rgba(0, 0, 0, ${ta.toFixed(2)})`;
+                    ctx.fillText(tch, gc * CELL + CELL / 2, gr * CELL + CELL / 2);
+                }
+            }
+        }
+
+        // Atom body — deformed blob SDF
+        const s = atom.seed;
+        const bCeil = ceil + 1;
+        for (let dr = -bCeil; dr <= bCeil; dr++) {
+            for (let dc = -bCeil; dc <= bCeil; dc++) {
+                const gr = Math.round(atom.y) + dr, gc = Math.round(atom.x) + dc;
+                if (gr < 0 || gr >= ROWS || gc < 0 || gc >= COLS) continue;
+                const dy07 = dr * 0.7;
+                const d = Math.sqrt(dc * dc + dy07 * dy07);
+                const a = Math.atan2(dy07, dc);
+                const blobR = ar
+                    + 0.4 * atom.size * Math.sin(a * 2 + sphereTime * 0.12 + s)
+                    + 0.3 * atom.size * Math.sin(a * 3 - sphereTime * 0.09 + s * 1.7)
+                    + 0.2 * atom.size * Math.sin(a * 5 + sphereTime * 0.15 + s * 0.6);
+                if (d >= blobR) continue;
+                const nd = d / blobR;
+                const depth = Math.sqrt(1 - nd * nd);
+                const light = Math.max(0, (dc / blobR) * -0.5 + (dy07 / blobR) * -0.7 + depth * 0.5);
+                const shade = 0.55 + 0.45 * light;  // 0.55–1.0: dark core, lighter lit side
+                const alpha = shade * depth * (0.6 + Math.random() * 0.4) * dim;
+                if (alpha < 0.02) continue;
+                const ci = Math.floor(shade * depth * (CHARS.length - 1));
+                const jitter = Math.floor(Math.random() * 3) - 1;
+                const ch = CHARS[Math.max(0, Math.min(CHARS.length - 1, ci + jitter))];
+                if (ch === ' ') continue;
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(ch, gc * CELL + CELL / 2, gr * CELL + CELL / 2);
+            }
+        }
+    }
+
+    // ── Ice Tower Platformer ──
+
+    function initIceTower() {
+        isIceTower = true;
+        COLS = 70; ROWS = 98;
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+        brightnessMap = [];
+
+        towerBuddy = { x: 32, y: 0, vx: 1.2, vy: T_JUMP };
+        towerCameraY = -ROWS * 0.5;
+        towerPlatforms = [];
+
+        // Floor
+        towerPlatforms.push({ x: 0, w: COLS, y: 4 });
+
+        // Initial platforms — wide, well-spaced
+        for (let i = 1; i <= 8; i++) {
+            const w = 14 + Math.floor(Math.random() * 12);
+            towerPlatforms.push({
+                x: Math.floor(Math.random() * (COLS - w)),
+                w,
+                y: 4 - i * (12 + Math.floor(Math.random() * 8)),
+            });
+        }
+
+        cancelAnimationFrame(frameId);
+        frameId = requestAnimationFrame(loop);
+    }
+
+    function drawIceTower() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `${CELL + 1}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const b = towerBuddy;
+
+        // Camera scrolls up constantly (slower than buddy's jump arc)
+        towerCameraY -= 0.4;
+
+        // Physics
+        b.vy += T_GRAV;
+        b.y += b.vy;
+        b.x += b.vx;
+
+        // Wall bounce
+        if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * 0.8 + 0.5; }
+        if (b.x > COLS - BW) { b.x = COLS - BW; b.vx = -(Math.abs(b.vx) * 0.8 + 0.5); }
+
+        // Guarantee a platform under the buddy when falling
+        if (b.vy > 0) {
+            const feetY = b.y + BH;
+            const hasCatch = towerPlatforms.some(p =>
+                p.y >= feetY - 1 && p.y < feetY + 16 &&
+                b.x + BW > p.x - 3 && b.x < p.x + p.w + 3
+            );
+            if (!hasCatch) {
+                const w = 18 + Math.floor(Math.random() * 8);
+                const px = Math.max(0, Math.min(COLS - w, Math.round(b.x - w / 2 + BW / 2)));
+                towerPlatforms.push({ x: px, w, y: Math.round(feetY + 5) });
+            }
+        }
+
+        // Platform collision
+        if (b.vy > 0) {
+            for (const p of towerPlatforms) {
+                if (b.x + BW > p.x && b.x < p.x + p.w &&
+                    b.y + BH >= p.y && b.y + BH < p.y + 4) {
+                    b.y = p.y - BH;
+                    b.vy = T_JUMP;
+                }
+            }
+        }
+
+        // Camera also tracks buddy if buddy is higher than the auto-scroll
+        if (b.y < towerCameraY + ROWS * 0.3) {
+            towerCameraY = b.y - ROWS * 0.3;
+        }
+
+        // Generate platforms above — wide, well-spaced
+        let highest = Math.min(...towerPlatforms.map(p => p.y));
+        while (highest > towerCameraY - ROWS * 0.5) {
+            const w = 14 + Math.floor(Math.random() * 12);
+            highest -= 12 + Math.floor(Math.random() * 8);
+            towerPlatforms.push({
+                x: Math.floor(Math.random() * (COLS - w)), w, y: highest,
+            });
+        }
+
+        // Cull platforms below camera
+        const cullY = towerCameraY + ROWS + 10;
+        towerPlatforms = towerPlatforms.filter(p => p.y < cullY);
+
+        // ── Render ──
+        const camY = towerCameraY;
+
+        // Platforms (2 rows thick for visibility)
+        for (const p of towerPlatforms) {
+            const sy = Math.round(p.y - camY);
+            if (sy < -3 || sy >= ROWS + 3) continue;
+            for (let row = 0; row < 2; row++) {
+                const py = sy + row;
+                if (py < 0 || py >= ROWS) continue;
+                for (let i = 0; i < p.w; i++) {
+                    const sx = p.x + i;
+                    if (sx < 0 || sx >= COLS) continue;
+                    const pc = row === 0
+                        ? (i === 0 || i === p.w - 1 ? '[' : '=')
+                        : (i === 0 || i === p.w - 1 ? '|' : '-');
+                    const alpha = row === 0 ? 0.35 + Math.random() * 0.15 : 0.2 + Math.random() * 0.1;
+                    ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                    ctx.fillText(pc, sx * CELL + CELL / 2, py * CELL + CELL / 2);
+                }
+            }
+        }
+
+        // Buddy sprite
+        const frame = b.vy < 0 ? BUDDY_JUMP : BUDDY_FALL;
+        const bsx = Math.round(b.x);
+        const bsy = Math.round(b.y - camY);
+        for (let r = 0; r < BH; r++) {
+            for (let c = 0; c < BW; c++) {
+                const ch = frame[r][c];
+                if (ch === ' ') continue;
+                const sx = bsx + c, sy = bsy + r;
+                if (sx < 0 || sx >= COLS || sy < 0 || sy >= ROWS) continue;
+                const isEye = ch === '#';
+                const ci = isEye ? CHARS.length - 1 : CHARS.length - 3;
+                const alpha = isEye ? 0.9 : 0.6 + Math.random() * 0.3;
+                ctx.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(2)})`;
+                ctx.fillText(CHARS[ci], sx * CELL + CELL / 2, sy * CELL + CELL / 2);
+            }
+        }
+    }
+
     function loop(time: number) {
         frameId = requestAnimationFrame(loop);
-        if (time - lastTime < 125) return;
+        const interval = (isHyperspace || isEnergySphere || isBrainActive || isEarZoom || isIceTower) ? 50 : 125;
+        if (time - lastTime < interval) return;
         lastTime = time;
-        draw();
+        if (isEarZoom) drawEarZoom();
+        else if (isBrainActive) drawBrain();
+        else if (isHyperspace) drawHyperspace();
+        else if (isEnergySphere) drawEnergySphere();
+        else if (isIceTower) drawIceTower();
+        else draw();
     }
 
     // Visibility-based animation
     const observer = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting && brightnessMap.length) {
+        if (entry.isIntersecting && (brightnessMap.length || isHyperspace || isEnergySphere || isBrainActive || isEarZoom || isIceTower)) {
             frameId = requestAnimationFrame(loop);
         } else {
             cancelAnimationFrame(frameId);

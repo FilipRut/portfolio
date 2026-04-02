@@ -1,0 +1,289 @@
+- generic [active] [ref=e1]:
+  - img "Interactive 3D keychain animation"
+  - link "RUT — back to top":
+    - /url: /
+    - img
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: Filip Rut
+      - link "Contact me" [ref=e17] [cursor=pointer]:
+        - /url: mailto:filiprut@example.com
+    - button "Pause background animation" [ref=e18] [cursor=pointer]:
+      - img [ref=e19]
+    - generic:
+      - generic: R
+      - generic: U
+      - generic: T
+    - generic:
+      - link "Orange Brand Redesign Orange Brand Redesign Orange Polska" [ref=e22] [cursor=pointer]:
+        - /url: /projects/orange-brand-redesign
+        - img "Orange Brand Redesign"
+        - generic:
+          - generic: Orange Brand Redesign
+          - generic: Orange Polska
+      - link "Zabka App Concept Zabka App Concept Zabka" [ref=e23] [cursor=pointer]:
+        - /url: /projects/zabka-app-concept
+        - img "Zabka App Concept"
+        - generic:
+          - generic: Zabka App Concept
+          - generic: Zabka
+      - link "HP Print Analytics Dashboard HP Print Analytics Dashboard HP Inc." [ref=e24] [cursor=pointer]:
+        - /url: /projects/hp-dashboard
+        - img "HP Print Analytics Dashboard"
+        - generic:
+          - generic: HP Print Analytics Dashboard
+          - generic: HP Inc.
+      - link "Enea Energy App Enea Energy App Enea S.A." [ref=e25] [cursor=pointer]:
+        - /url: /projects/enea-energy-app
+        - img "Enea Energy App"
+        - generic:
+          - generic: Enea Energy App
+          - generic: Enea S.A.
+      - link "Lidl Self-Checkout Kiosk Lidl Self-Checkout Kiosk Lidl" [ref=e26] [cursor=pointer]:
+        - /url: /projects/lidl-checkout
+        - img "Lidl Self-Checkout Kiosk"
+        - generic:
+          - generic: Lidl Self-Checkout Kiosk
+          - generic: Lidl
+      - link "Selgros B2B Platform Selgros B2B Platform Selgros" [ref=e27] [cursor=pointer]:
+        - /url: /projects/selgros-b2b-platform
+        - img "Selgros B2B Platform"
+        - generic:
+          - generic: Selgros B2B Platform
+          - generic: Selgros
+      - link "Wella Color Consultation Tool Wella Color Consultation Tool Wella Professional" [ref=e28] [cursor=pointer]:
+        - /url: /projects/wella-color-tool
+        - img "Wella Color Consultation Tool"
+        - generic:
+          - generic: Wella Color Consultation Tool
+          - generic: Wella Professional
+      - link "HP Support AI Assistant HP Support AI Assistant HP Inc." [ref=e29] [cursor=pointer]:
+        - /url: /projects/hp-support-ai
+        - img "HP Support AI Assistant"
+        - generic:
+          - generic: HP Support AI Assistant
+          - generic: HP Inc.
+      - link "Portfolio Website Portfolio Website" [ref=e30] [cursor=pointer]:
+        - /url: /projects/personal-portfolio
+        - img "Portfolio Website"
+        - generic:
+          - generic: Portfolio Website
+      - link "Orange Brand Redesign Orange Brand Redesign Orange Polska" [ref=e31] [cursor=pointer]:
+        - /url: /projects/orange-brand-redesign
+        - img "Orange Brand Redesign"
+        - generic:
+          - generic: Orange Brand Redesign
+          - generic: Orange Polska
+      - link "Zabka App Concept Zabka App Concept Zabka" [ref=e32] [cursor=pointer]:
+        - /url: /projects/zabka-app-concept
+        - img "Zabka App Concept"
+        - generic:
+          - generic: Zabka App Concept
+          - generic: Zabka
+      - link "HP Print Analytics Dashboard HP Print Analytics Dashboard HP Inc." [ref=e33] [cursor=pointer]:
+        - /url: /projects/hp-dashboard
+        - img "HP Print Analytics Dashboard"
+        - generic:
+          - generic: HP Print Analytics Dashboard
+          - generic: HP Inc.
+      - link "Enea Energy App Enea Energy App Enea S.A." [ref=e34] [cursor=pointer]:
+        - /url: /projects/enea-energy-app
+        - img "Enea Energy App"
+        - generic:
+          - generic: Enea Energy App
+          - generic: Enea S.A.
+      - link "Lidl Self-Checkout Kiosk Lidl Self-Checkout Kiosk Lidl" [ref=e35] [cursor=pointer]:
+        - /url: /projects/lidl-checkout
+        - img "Lidl Self-Checkout Kiosk"
+        - generic:
+          - generic: Lidl Self-Checkout Kiosk
+          - generic: Lidl
+      - link "Selgros B2B Platform Selgros B2B Platform Selgros" [ref=e36] [cursor=pointer]:
+        - /url: /projects/selgros-b2b-platform
+        - img "Selgros B2B Platform"
+        - generic:
+          - generic: Selgros B2B Platform
+          - generic: Selgros
+      - link "Wella Color Consultation Tool Wella Color Consultation Tool Wella Professional" [ref=e37] [cursor=pointer]:
+        - /url: /projects/wella-color-tool
+        - img "Wella Color Consultation Tool"
+        - generic:
+          - generic: Wella Color Consultation Tool
+          - generic: Wella Professional
+      - link "HP Support AI Assistant HP Support AI Assistant HP Inc." [ref=e38] [cursor=pointer]:
+        - /url: /projects/hp-support-ai
+        - img "HP Support AI Assistant"
+        - generic:
+          - generic: HP Support AI Assistant
+          - generic: HP Inc.
+      - link "Portfolio Website Portfolio Website" [ref=e39] [cursor=pointer]:
+        - /url: /projects/personal-portfolio
+        - img "Portfolio Website"
+        - generic:
+          - generic: Portfolio Website
+  - generic:
+    - img
+    - generic [ref=e41]:
+      - textbox "Ask me anything about my work" [ref=e42]:
+        - /placeholder: ""
+      - generic:
+        - generic:
+          - generic: How do you handle conflicting feedback?
+      - generic:
+        - paragraph
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - button "Projects?" [ref=e45] [cursor=pointer]
+          - button "Process?" [ref=e46] [cursor=pointer]
+          - button "Hire?" [ref=e47] [cursor=pointer]
+        - button "Send" [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - generic [ref=e55]:
+        - link "Filip Rut" [ref=e56] [cursor=pointer]:
+          - /url: "#about"
+          - img "Filip Rut" [ref=e57]
+        - heading "Leading above the corporate chaos" [level=1] [ref=e58]
+      - paragraph [ref=e59]: An experienced Lead AI UX/UI designer and Webflow developer, delivering high-quality designs and websites.
+    - generic [ref=e60]:
+      - link "Orange Polska Orange Brand Redesign" [ref=e228] [cursor=pointer]:
+        - /url: /projects/orange-brand-redesign
+        - generic [ref=e62]: Orange Polska
+        - generic [ref=e63]: Orange Brand Redesign
+      - link "Zabka Zabka App Concept" [ref=e229] [cursor=pointer]:
+        - /url: /projects/zabka-app-concept
+        - generic [ref=e66]: Zabka
+        - generic [ref=e67]: Zabka App Concept
+      - link "HP Inc. HP Print Analytics Dashboard" [ref=e230] [cursor=pointer]:
+        - /url: /projects/hp-dashboard
+        - generic [ref=e70]: HP Inc.
+        - generic [ref=e71]: HP Print Analytics Dashboard
+      - link "Enea S.A. Enea Energy App" [ref=e231] [cursor=pointer]:
+        - /url: /projects/enea-energy-app
+        - generic [ref=e74]: Enea S.A.
+        - generic [ref=e75]: Enea Energy App
+    - button "Show more" [ref=e232] [cursor=pointer]:
+      - generic [ref=e87]: Show more
+  - generic:
+    - generic:
+      - generic: Crafting
+      - generic: products for
+    - generic:
+      - generic: startups
+  - generic [ref=e98]:
+    - generic [ref=e99]:
+      - generic [ref=e100]:
+        - generic [ref=e102]: K
+        - generic [ref=e103]:
+          - generic [ref=e104]: Katarzyna Wiśniewska
+          - generic [ref=e105]: Head of Product, Orange Polska
+      - generic [ref=e106]:
+        - generic [ref=e107]: ★
+        - generic [ref=e108]: ★
+        - generic [ref=e109]: ★
+        - generic [ref=e110]: ★
+        - generic [ref=e111]: ★
+      - paragraph [ref=e112]: "\"Filip delivered a complete brand redesign in record time. His AI-augmented workflow meant we saw more iterations in a week than we normally get in a month.\""
+    - generic [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e116]: M
+        - generic [ref=e117]:
+          - generic [ref=e118]: Marcin Kowalski
+          - generic [ref=e119]: VP of Engineering, HP Inc.
+      - generic [ref=e120]:
+        - generic [ref=e121]: ★
+        - generic [ref=e122]: ★
+        - generic [ref=e123]: ★
+        - generic [ref=e124]: ★
+        - generic [ref=e125]: ★
+      - paragraph [ref=e126]: "\"The dashboard he built transformed how our team monitors print analytics. Clean, fast, intuitive.\""
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - generic [ref=e130]: A
+        - generic [ref=e131]:
+          - generic [ref=e132]: Anna Zielińska
+          - generic [ref=e133]: Product Owner, Żabka
+      - generic [ref=e134]:
+        - generic [ref=e135]: ★
+        - generic [ref=e136]: ★
+        - generic [ref=e137]: ★
+        - generic [ref=e138]: ★
+        - generic [ref=e139]: ★
+      - paragraph [ref=e140]: "\"Working with Filip felt like having a design team of five. He prototyped, tested, and iterated faster than anyone I've worked with.\""
+    - generic [ref=e141]:
+      - generic [ref=e142]:
+        - generic [ref=e144]: T
+        - generic [ref=e145]:
+          - generic [ref=e146]: Tomasz Nowak
+          - generic [ref=e147]: CTO, Enea S.A.
+      - generic [ref=e148]:
+        - generic [ref=e149]: ★
+        - generic [ref=e150]: ★
+        - generic [ref=e151]: ★
+        - generic [ref=e152]: ★
+        - generic [ref=e153]: ★
+      - paragraph [ref=e154]: "\"His energy app design reduced our support tickets by 40%. Users actually enjoy checking their consumption now.\""
+    - generic [ref=e155]:
+      - generic [ref=e156]:
+        - generic [ref=e158]: E
+        - generic [ref=e159]:
+          - generic [ref=e160]: Ewa Grabowska
+          - generic [ref=e161]: UX Director, Lidl
+      - generic [ref=e162]:
+        - generic [ref=e163]: ★
+        - generic [ref=e164]: ★
+        - generic [ref=e165]: ★
+        - generic [ref=e166]: ★
+        - generic [ref=e167]: ★
+      - paragraph [ref=e168]: "\"The self-checkout kiosk redesign was a game-changer. Filip understood the constraints of retail hardware and still made it beautiful.\""
+    - generic [ref=e169]:
+      - generic [ref=e170]:
+        - generic [ref=e172]: P
+        - generic [ref=e173]:
+          - generic [ref=e174]: Piotr Adamski
+          - generic [ref=e175]: Digital Lead, Selgros
+      - generic [ref=e176]:
+        - generic [ref=e177]: ★
+        - generic [ref=e178]: ★
+        - generic [ref=e179]: ★
+        - generic [ref=e180]: ★
+        - generic [ref=e181]: ★
+      - paragraph [ref=e182]: "\"Our B2B platform went from clunky to delightful. Filip has a rare ability to simplify complex workflows.\""
+  - generic [ref=e188]:
+    - heading "About me" [level=2] [ref=e189]
+    - paragraph [ref=e190]: I'm Filip — a Lead AI UX/UI Designer and Webflow developer based in Warsaw. I help brands cut through corporate chaos with sharp design systems, rapid prototyping, and AI-augmented workflows that actually ship.
+    - paragraph [ref=e191]: Over the past years I've led design for Orange, HP, Lidl, Enea and others — building everything from enterprise dashboards to consumer apps and self-checkout kiosks.
+  - generic [ref=e193]:
+    - generic [ref=e194]:
+      - paragraph [ref=e195]: How I design with AI
+      - heading "Not replacing creativity. Redirecting it." [level=2] [ref=e196]:
+        - text: Not replacing creativity.
+        - text: Redirecting it.
+    - generic [ref=e200]:
+      - generic [ref=e201] [cursor=pointer]:
+        - generic [ref=e202]: "01"
+        - generic [ref=e203]:
+          - heading "Listen before prompting" [level=3] [ref=e204]
+          - paragraph [ref=e205]: Every project starts with the same question — what problem are we actually solving? AI doesn't change that. It just makes the cost of being wrong lower and the speed of finding right higher.
+      - generic [ref=e206] [cursor=pointer]:
+        - generic [ref=e207]: "02"
+        - generic [ref=e208]:
+          - heading "Think in systems, not screens" [level=3] [ref=e209]
+          - paragraph [ref=e210]: I map the full picture first — user flows, data architecture, edge cases. AI accelerates exploration of variants I wouldn't have time to sketch by hand. More paths tested, stronger decisions.
+      - generic [ref=e211] [cursor=pointer]:
+        - generic [ref=e212]: "03"
+        - generic [ref=e213]:
+          - heading "Prototype at the speed of thought" [level=3] [ref=e214]
+          - paragraph [ref=e215]: From concept to interactive prototype in hours, not weeks. AI handles the repetitive scaffolding so I stay focused on the craft — the micro-interactions, the typography, the feeling.
+      - generic [ref=e216] [cursor=pointer]:
+        - generic [ref=e217]: "04"
+        - generic [ref=e218]:
+          - heading "Validate with real signals" [level=3] [ref=e219]
+          - paragraph [ref=e220]: Beautiful doesn't mean useful. I test early, test often, and let data guide iteration. AI helps synthesize feedback faster — but the judgment call is always human.
+      - generic [ref=e221] [cursor=pointer]:
+        - generic [ref=e222]: "05"
+        - generic [ref=e223]:
+          - heading "Ship and keep shaping" [level=3] [ref=e224]
+          - paragraph [ref=e225]: Design doesn't end at handoff. I stay close to code, close to users, close to the product. The best work evolves after launch — when reality meets intention.
+    - paragraph [ref=e227]: AI is my multiplier, not my replacement. It lets me spend less time on production and more time on the decisions that actually matter.

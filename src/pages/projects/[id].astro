@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteLogo from '../../components/SiteLogo.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -14,7 +15,16 @@ const { project } = Astro.props;
 const d = project.data;
 const { Content } = await render(project);
 
-// Structured sections in display order
+// Compute prev/next from full sorted list
+const allProjects = (await getCollection('projects'))
+  .filter(p => !p.data.draft)
+  .sort((a, b) => a.data.order - b.data.order);
+const currentIdx = allProjects.findIndex(p => p.id === project.id);
+const prev = allProjects[currentIdx - 1] ?? allProjects[allProjects.length - 1];
+const next = allProjects[currentIdx + 1] ?? allProjects[0];
+const prevProject = { id: prev.id, title: prev.data.title, client: prev.data.client ?? prev.data.company ?? '' };
+const nextProject = { id: next.id, title: next.data.title, client: next.data.client ?? next.data.company ?? '' };
+
 const sections = [
   { key: 'problem',    data: d.problem },
   { key: 'users',      data: d.users },
@@ -26,14 +36,35 @@ const sections = [
 const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d.tools.length || d.platform;
 ---
 
-<BaseLayout>
-  <article class="project-page">
-    <!-- ── HERO ── -->
-    <header class="hero">
-      <a href="/projects" class="back-link">&larr; All projects</a>
+<BaseLayout title={`${d.title} — Filip Rut`}>
+  <SiteLogo alwaysVisible />
 
-      {hasMetadata && (
-        <div class="meta-bar">
+  <article class="project-page">
+    <!-- ── DARK HERO ── -->
+    <div class="hero-wrap">
+      <header class="project-hero" data-section-dark>
+        <a href="/projects" class="back-link reveal-hero">&larr; All projects</a>
+        <h1 class="reveal-hero">{d.title}</h1>
+        {d.subtitle && <p class="subtitle reveal-hero">{d.subtitle}</p>}
+        <p class="lead reveal-hero">{d.description}</p>
+
+        <div class="tag-row reveal-hero">
+          {d.tags.map(tag => <span class="tag">{tag}</span>)}
+          {(d.link || d.behance || d.figma) && (
+            <div class="ext-links">
+              {d.link && <a href={d.link} target="_blank" rel="noopener noreferrer">Live site &rarr;</a>}
+              {d.behance && <a href={d.behance} target="_blank" rel="noopener noreferrer">Behance &rarr;</a>}
+              {d.figma && <a href={d.figma} target="_blank" rel="noopener noreferrer">Figma &rarr;</a>}
+            </div>
+          )}
+        </div>
+      </header>
+    </div>
+
+    <!-- ── GLASS META BAR ── -->
+    {hasMetadata && (
+      <div class="meta-bar-wrap">
+        <div class="meta-bar reveal-scroll">
           {d.client && <div class="meta-item"><span class="meta-label">Client</span><span class="meta-value">{d.client}</span></div>}
           {d.company && <div class="meta-item"><span class="meta-label">Company</span><span class="meta-value meta-company">{d.companyLogo && <img src={d.companyLogo} alt={d.company} class="company-logo" />}{d.company}</span></div>}
           {d.role && <div class="meta-item"><span class="meta-label">Role</span><span class="meta-value">{d.role}</span></div>}
@@ -43,26 +74,11 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
           {d.tools.length > 0 && <div class="meta-item"><span class="meta-label">Tools</span><span class="meta-value">{d.tools.join(', ')}</span></div>}
           {d.deliverables.length > 0 && <div class="meta-item"><span class="meta-label">Deliverables</span><span class="meta-value">{d.deliverables.join(', ')}</span></div>}
         </div>
-      )}
-
-      <h1>{d.title}</h1>
-      {d.subtitle && <p class="subtitle">{d.subtitle}</p>}
-      <p class="lead">{d.description}</p>
-
-      <div class="tag-row">
-        {d.tags.map(tag => <span class="tag">{tag}</span>)}
-        {(d.link || d.behance || d.figma) && (
-          <div class="ext-links">
-            {d.link && <a href={d.link} target="_blank" rel="noopener noreferrer">Live site &rarr;</a>}
-            {d.behance && <a href={d.behance} target="_blank" rel="noopener noreferrer">Behance &rarr;</a>}
-            {d.figma && <a href={d.figma} target="_blank" rel="noopener noreferrer">Figma &rarr;</a>}
-          </div>
-        )}
       </div>
-    </header>
+    )}
 
     <!-- ── COVER ── -->
-    <div class="cover-wrap">
+    <div class="cover-wrap reveal-scroll">
       {d.coverVideo
         ? <video src={d.coverVideo} autoplay loop muted playsinline />
         : <img src={d.cover} alt={d.title} loading="eager" decoding="async" />
@@ -72,7 +88,7 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     <!-- ── CASE STUDY SECTIONS ── -->
     <div class="case-study">
       {sections.map(({ data }) => data && (
-        <section class="cs-section">
+        <section class="cs-section reveal-scroll">
           {data.heading && <h2>{data.heading}</h2>}
           <div class="cs-body" set:html={data.body.replace(/\n/g, '<br/>')} />
           {data.image && (
@@ -84,13 +100,13 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
         </section>
       ))}
 
-      <!-- ── RESULTS ── -->
+      <!-- ── RESULTS (dark) ── -->
       {d.results && (
-        <section class="cs-section cs-results">
+        <section class="cs-section cs-results reveal-scroll">
           {d.results.heading && <h2>{d.results.heading}</h2>}
           {d.results.body && <p class="results-body">{d.results.body}</p>}
           {d.results.metrics.length > 0 && (
-            <div class="metrics-grid">
+            <div class="metrics-grid" data-reveal-stagger>
               {d.results.metrics.map(m => (
                 <div class="metric">
                   <span class="metric-value">{m.value}</span>
@@ -107,32 +123,35 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
         </section>
       )}
 
-      <!-- ── TESTIMONIAL ── -->
+      <!-- ── TESTIMONIAL (dark card) ── -->
       {d.testimonial && (
-        <blockquote class="testimonial">
-          <p>"{d.testimonial.quote}"</p>
-          <footer>
-            <strong>{d.testimonial.author}</strong>
-            {d.testimonial.role && <span>{d.testimonial.role}</span>}
-          </footer>
-        </blockquote>
+        <div class="testimonial reveal-scroll">
+          <div class="testi-avatar">{d.testimonial.author.charAt(0)}</div>
+          <blockquote>
+            <p>"{d.testimonial.quote}"</p>
+            <footer>
+              <strong>{d.testimonial.author}</strong>
+              {d.testimonial.role && <span>{d.testimonial.role}</span>}
+            </footer>
+          </blockquote>
+        </div>
       )}
 
       <!-- ── REFLECTION ── -->
       {d.reflection && (
-        <section class="cs-section cs-reflection">
+        <section class="cs-section cs-reflection reveal-scroll">
           {d.reflection.heading && <h2>{d.reflection.heading}</h2>}
           <div class="cs-body" set:html={d.reflection.body.replace(/\n/g, '<br/>')} />
         </section>
       )}
 
-      <!-- ── MARKDOWN BODY (additional free-form content) ── -->
+      <!-- ── MARKDOWN BODY ── -->
       <div class="cs-content"><Content /></div>
     </div>
 
     <!-- ── GALLERY ── -->
     {d.gallery.length > 0 && (
-      <div class="gallery">
+      <div class="gallery" data-reveal-stagger>
         {d.gallery.map(img => (
           <figure>
             <img src={img.src} alt={img.alt || ''} loading="lazy" decoding="async" />
@@ -142,44 +161,132 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
       </div>
     )}
 
-    <!-- ── FOOTER ── -->
-    <footer class="project-footer">
-      <a href="/projects" class="back-link">&larr; All projects</a>
-    </footer>
+    <!-- ── PREV / NEXT NAV ── -->
+    <nav class="project-nav reveal-scroll">
+      <a href={`/projects/${prevProject.id}`} class="nav-link nav-prev">
+        <span class="nav-label">&larr; Previous</span>
+        <span class="nav-client">{prevProject.client}</span>
+        <span class="nav-title">{prevProject.title}</span>
+      </a>
+      <a href="/projects" class="nav-all">All Projects</a>
+      <a href={`/projects/${nextProject.id}`} class="nav-link nav-next">
+        <span class="nav-label">Next &rarr;</span>
+        <span class="nav-client">{nextProject.client}</span>
+        <span class="nav-title">{nextProject.title}</span>
+      </a>
+    </nav>
   </article>
 </BaseLayout>
 
 <style>
   /* ── Layout ── */
-  .project-page { min-height: 100vh; background: #fafafa; }
+  .project-page { min-height: 100vh; background: #fff; }
 
-  .hero {
-    max-width: 800px;
+  /* ── Dark Hero ── */
+  .hero-wrap {
+    padding: 0 clamp(1.5rem, 1rem + 3vw, 4rem);
+  }
+
+  .project-hero {
+    background: #111;
+    border-radius: 0 0 clamp(1rem, 0.75rem + 0.5vw, 1.5rem) clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+    max-width: 1440px;
     margin: 0 auto;
-    padding: clamp(2rem, 1.5rem + 3vw, 5rem) clamp(1.5rem, 1rem + 2vw, 4rem) clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    padding: clamp(5rem, 4rem + 4vw, 9rem) clamp(2rem, 1.5rem + 2vw, 4rem) clamp(3rem, 2rem + 2vw, 5rem);
   }
 
   .back-link {
     display: inline-block;
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.8rem, 0.7rem + 0.2vw, 0.9rem);
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     text-decoration: none;
     margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
     transition: color 0.2s;
   }
-  .back-link:hover { color: rgba(0, 0, 0, 0.85); }
+  .back-link:hover { color: rgba(255, 255, 255, 0.8); }
 
-  /* ── Meta bar ── */
+  /* ── Hero text ── */
+  .project-hero h1 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.0;
+    margin: 0 0 0.5rem;
+    max-width: 900px;
+  }
+
+  .subtitle {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1.1rem, 1rem + 0.3vw, 1.35rem);
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    margin: 0 0 0.75rem;
+  }
+
+  .lead {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.6;
+    margin: 0 0 1.25rem;
+    max-width: 700px;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .ext-links {
+    display: flex; gap: 1rem; margin-left: 0.5rem;
+  }
+  .ext-links a {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.75rem + 0.1vw, 0.9rem);
+    color: #e53e3e;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .ext-links a:hover { opacity: 0.7; }
+
+  /* ── Glass Meta Bar ── */
+  .meta-bar-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem);
+  }
+
   .meta-bar {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
     gap: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
-    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
     padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
-    background: #fff;
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+    position: relative;
+    z-index: 5;
+    margin-top: -2rem;
+
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
     border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
   .meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
@@ -199,70 +306,15 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
   .meta-company { display: flex; align-items: center; gap: 0.4rem; }
   .company-logo { height: 1.1em; width: auto; object-fit: contain; }
 
-  /* ── Hero text ── */
-  .hero h1 {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
-    font-weight: 500;
-    color: #171717;
-    line-height: 1.1;
-    margin: 0 0 0.5rem;
-  }
-
-  .subtitle {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(1.1rem, 1rem + 0.3vw, 1.35rem);
-    color: rgba(0, 0, 0, 0.5);
-    font-style: italic;
-    margin: 0 0 0.75rem;
-  }
-
-  .lead {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem);
-    color: rgba(0, 0, 0, 0.6);
-    line-height: 1.6;
-    margin: 0 0 1rem;
-  }
-
-  .tag-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .tag {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
-    padding: 0.25rem 0.6rem;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.55);
-  }
-
-  .ext-links {
-    display: flex; gap: 1rem; margin-left: 0.5rem;
-  }
-  .ext-links a {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: clamp(0.8rem, 0.75rem + 0.1vw, 0.9rem);
-    color: #e53e3e;
-    text-decoration: none;
-    font-weight: 500;
-    transition: opacity 0.2s;
-  }
-  .ext-links a:hover { opacity: 0.7; }
-
   /* ── Cover ── */
   .cover-wrap {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem);
+    padding: clamp(2rem, 1.5rem + 1.5vw, 3.5rem) clamp(1.5rem, 1rem + 2vw, 4rem) 0;
   }
   .cover-wrap img, .cover-wrap video {
     width: 100%;
-    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
     background: #e5e5e5;
     aspect-ratio: 16 / 9;
     object-fit: cover;
@@ -285,6 +337,18 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     font-weight: 500;
     color: #171717;
     margin: 0 0 clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    position: relative;
+    padding-left: 1rem;
+  }
+  .cs-section h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    width: 3px;
+    height: 0.85em;
+    background: #E53E3E;
+    border-radius: 2px;
   }
 
   .cs-body, .results-body {
@@ -312,7 +376,9 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     text-align: center;
   }
 
-  /* ── Metrics ── */
+  /* ── Dark Metrics ── */
+  .cs-results h2 { color: #171717; }
+
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
@@ -323,10 +389,10 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
   .metric {
     display: flex;
     flex-direction: column;
-    padding: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    padding: clamp(1.25rem, 1rem + 0.75vw, 2rem);
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
   }
 
   .metric-value {
@@ -340,25 +406,47 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
   .metric-label {
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.75rem, 0.7rem + 0.1vw, 0.85rem);
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.5);
     margin-top: 0.35rem;
     line-height: 1.3;
   }
 
-  /* ── Testimonial ── */
+  /* ── Dark Testimonial Card ── */
   .testimonial {
+    display: flex;
+    gap: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
     margin: clamp(2rem, 1.5rem + 1.5vw, 3.5rem) 0;
-    padding: clamp(1.5rem, 1rem + 1vw, 2.5rem);
-    background: #fff;
-    border-left: 3px solid #e53e3e;
-    border-radius: 0 clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem) clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem) 0;
+    padding: clamp(1.5rem, 1.25rem + 1vw, 2.5rem);
+    background: rgba(17, 17, 17, 0.95);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   }
+
+  .testi-avatar {
+    flex-shrink: 0;
+    width: clamp(2.5rem, 2rem + 1vw, 3.5rem);
+    height: clamp(2.5rem, 2rem + 1vw, 3.5rem);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e53e3e, #c82d2d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .testimonial blockquote { margin: 0; }
 
   .testimonial p {
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(1rem, 0.9rem + 0.25vw, 1.15rem);
     font-style: italic;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.7);
     line-height: 1.6;
     margin: 0 0 0.75rem;
   }
@@ -370,11 +458,14 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     flex-direction: column;
     gap: 0.1rem;
   }
-  .testimonial footer strong { color: #171717; }
-  .testimonial footer span { color: rgba(0, 0, 0, 0.45); }
+  .testimonial footer strong { color: rgba(255, 255, 255, 0.9); }
+  .testimonial footer span { color: rgba(255, 255, 255, 0.4); }
 
   /* ── Reflection ── */
-  .cs-reflection { border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: clamp(2rem, 1.5rem + 1vw, 3rem); }
+  .cs-reflection {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: clamp(2rem, 1.5rem + 1vw, 3rem);
+  }
 
   /* ── Free-form markdown ── */
   .cs-content:empty { display: none; }
@@ -384,6 +475,18 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     font-weight: 500;
     margin: clamp(2rem, 1.5rem + 1vw, 3rem) 0 0.75rem;
     color: #171717;
+    position: relative;
+    padding-left: 1rem;
+  }
+  .cs-content :global(h2::before) {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    width: 3px;
+    height: 0.85em;
+    background: #E53E3E;
+    border-radius: 2px;
   }
   .cs-content :global(p) {
     font-family: 'Inter Tight', sans-serif;
@@ -414,10 +517,19 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     gap: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
   }
 
-  .gallery figure { margin: 0; }
+  .gallery figure {
+    margin: 0;
+    border-radius: clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .gallery figure:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
   .gallery img {
     width: 100%;
-    border-radius: clamp(0.375rem, 0.25rem + 0.25vw, 0.5rem);
+    display: block;
     background: #e5e5e5;
     aspect-ratio: 16 / 10;
     object-fit: cover;
@@ -426,14 +538,111 @@ const hasMetadata = d.client || d.role || d.company || d.team || d.timeline || d
     font-family: 'Inter Tight', sans-serif;
     font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
     color: rgba(0, 0, 0, 0.4);
-    margin-top: 0.4rem;
+    padding: 0.5rem clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
     text-align: center;
   }
 
-  /* ── Footer ── */
-  .project-footer {
-    max-width: 800px;
+  /* ── Prev/Next Navigation ── */
+  .project-nav {
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 0 clamp(1.5rem, 1rem + 2vw, 4rem) clamp(3rem, 2rem + 2vw, 5rem);
+    padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.5rem, 1rem + 2vw, 4rem) clamp(3rem, 2rem + 2vw, 5rem);
+    display: flex;
+    align-items: stretch;
+    gap: clamp(1rem, 0.75rem + 0.5vw, 1.5rem);
+  }
+
+  .nav-link {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: clamp(1.25rem, 1rem + 0.5vw, 1.75rem);
+    border-radius: clamp(0.75rem, 0.5rem + 0.5vw, 1.25rem);
+    text-decoration: none;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease, box-shadow 0.3s ease;
+
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px) saturate(130%);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      inset 0 -0.5px 0 rgba(0, 0, 0, 0.02);
+  }
+
+  .nav-link:hover {
+    background: #111;
+    border-color: #111;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-next { text-align: right; }
+
+  .nav-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    color: rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: color 0.3s ease;
+  }
+  .nav-link:hover .nav-label { color: rgba(255, 255, 255, 0.4); }
+
+  .nav-client {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.7rem, 0.65rem + 0.1vw, 0.8rem);
+    color: rgba(0, 0, 0, 0.35);
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  .nav-link:hover .nav-client { color: rgba(255, 255, 255, 0.4); }
+
+  .nav-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(1rem, 0.9rem + 0.3vw, 1.2rem);
+    font-weight: 500;
+    color: #171717;
+    line-height: 1.3;
+    transition: color 0.3s ease;
+  }
+  .nav-link:hover .nav-title { color: #fff; }
+
+  .nav-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: clamp(0.8rem, 0.7rem + 0.2vw, 0.9rem);
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.45);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 0 clamp(0.5rem, 0.35rem + 0.3vw, 0.75rem);
+    transition: color 0.2s;
+  }
+  .nav-all:hover { color: #e53e3e; }
+
+  /* ── Mobile ── */
+  @media (max-width: 767px) {
+    .project-hero {
+      padding-left: clamp(1.25rem, 1rem + 0.5vw, 2rem);
+      padding-right: clamp(1.25rem, 1rem + 0.5vw, 2rem);
+    }
+    .testimonial {
+      flex-direction: column;
+      gap: clamp(0.75rem, 0.5rem + 0.5vw, 1rem);
+    }
+    .project-nav {
+      flex-direction: column;
+    }
+    .nav-next { text-align: left; }
+    .nav-all { padding: 0.5rem 0; }
   }
 </style>
+
+<script>
+  import '../../scripts/subpage';
+</script>

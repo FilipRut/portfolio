@@ -443,8 +443,28 @@ const featured = projects.slice(0, 6);
             flex-direction: column;
             align-items: flex-start;
         }
+        /* Show only 4 tiles on mobile */
+        .project-tile:nth-child(n+5) {
+            display: none;
+        }
+        /* Firma nad tytułem na mobile */
+        .project-tile {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(0.25rem, 0.15rem + 0.2vw, 0.4rem);
+        }
         .tile-client {
             min-width: auto;
+            font-size: clamp(0.65rem, 0.55rem + 0.2vw, 0.75rem);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(229, 62, 62, 0.7);
+        }
+        .tile-year {
+            display: none;
+        }
+        .intro-photo-canvas {
+            display: none;
         }
         .show-more-line--first {
             width: clamp(1rem, 0.75rem + 0.5vw, 2rem);
@@ -456,7 +476,8 @@ const featured = projects.slice(0, 6);
 </style>
 
 <script>
-    // ── ASCII photo overlay with metaball blob effect ──
+    // ── ASCII photo overlay with metaball blob effect (desktop only) ──
+    if (window.innerWidth >= 768) {
     import('../scripts/introPhotoMap').then(({ INTRO_COLS, INTRO_ROWS, INTRO_MAP }) => {
         const canvas = document.getElementById('intro-photo-canvas') as HTMLCanvasElement;
         const wrap = document.getElementById('intro-photo-link') as HTMLAnchorElement;
@@ -615,6 +636,7 @@ const featured = projects.slice(0, 6);
         });
         observer.observe(canvas);
     });
+    } // end desktop-only guard
 </script>
 
 <script>
